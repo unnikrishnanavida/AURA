@@ -1,0 +1,24 @@
+cd "C:\Users\navid\Desktop\AURA\01_FOUNDATION\Architecture\ADS"
+
+Remove-Item -Recurse -Force .\ADS-001 -ErrorAction SilentlyContinue
+
+mkdir ADS-001
+cd ADS-001
+
+New-Item 00-index.md -ItemType File
+New-Item 01-document-control.md -ItemType File
+New-Item 02-executive-summary.md -ItemType File
+New-Item 03-system-design-overview.md -ItemType File
+New-Item 04-component-design.md -ItemType File
+New-Item 05-module-specifications.md -ItemType File
+New-Item 06-data-design.md -ItemType File
+New-Item 07-api-design.md -ItemType File
+New-Item 08-interface-specifications.md -ItemType File
+New-Item 09-sequence-design.md -ItemType File
+New-Item 10-deployment-specifications.md -ItemType File
+New-Item 11-configuration-specifications.md -ItemType File
+New-Item 12-design-guidelines.md -ItemType File
+New-Item 13-future-design-roadmap.md -ItemType File
+New-Item 14-references.md -ItemType File
+New-Item 15-appendices.md -ItemType File
+New-Item AURA-ADS-001.md -ItemType File
