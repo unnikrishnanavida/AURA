@@ -1,0 +1,144 @@
+.card {
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 20px;
+
+    padding: 24px;
+
+    border-radius: 18px;
+
+    background: rgba(19, 23, 32, 0.82);
+
+    border: 1px solid rgba(255,255,255,0.08);
+
+    backdrop-filter: blur(18px);
+
+    transition: .3s;
+
+}
+
+.card:hover {
+
+    border-color: #D4AF37;
+
+    box-shadow: 0 0 30px rgba(212,175,55,.12);
+
+}
+
+.header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+.header h2 {
+
+    color: #F8FAFC;
+
+    font-size: 1.1rem;
+
+    font-weight: 600;
+
+}
+
+.viewAll {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #D4AF37;
+
+    cursor: pointer;
+
+    font-size: .9rem;
+
+    transition: .25s;
+
+}
+
+.viewAll:hover {
+
+    transform: translateX(4px);
+
+}
+
+.feed {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 16px;
+
+    max-height: 460px;
+
+    overflow-y: auto;
+
+    padding-right: 4px;
+
+}
+
+.feed::-webkit-scrollbar {
+
+    width: 6px;
+
+}
+
+.feed::-webkit-scrollbar-thumb {
+
+    background: rgba(212,175,55,.4);
+
+    border-radius: 999px;
+
+}
+
+.empty {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    min-height: 120px;
+
+    color: #9CA3AF;
+
+    border: 1px dashed rgba(255,255,255,.08);
+
+    border-radius: 12px;
+
+}
+
+@media (max-width:768px){
+
+.header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:12px;
+
+}
+
+.feed{
+
+max-height:none;
+
+}
+
+}

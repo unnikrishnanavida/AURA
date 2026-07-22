@@ -1,0 +1,39 @@
+.container{
+
+    width:100%;
+
+    min-height:220px;
+
+}
+
+:global(.recharts-tooltip-wrapper){
+
+    outline:none;
+
+}
+
+:global(.recharts-default-tooltip){
+
+    background:#161A21 !important;
+
+    border:1px solid rgba(212,175,55,.25) !important;
+
+    border-radius:12px !important;
+
+    color:#F8FAFC !important;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+
+}
+
+:global(.recharts-tooltip-label){
+
+    color:#F8FAFC !important;
+
+}
+
+:global(.recharts-legend-item-text){
+
+    color:#CBD5E1 !important;
+
+}

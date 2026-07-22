@@ -1,0 +1,95 @@
+.card {
+  position: relative;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  border: 1px solid rgba(255,255,255,.08);
+
+  background: rgba(19,23,32,.55);
+
+  box-shadow:
+    0 8px 32px rgba(0,0,0,.45);
+
+  transition:
+    transform .35s ease,
+    box-shadow .35s ease,
+    border-color .35s ease;
+}
+
+.card::before {
+
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+
+  linear-gradient(
+    135deg,
+    rgba(248,215,126,.06),
+    transparent 50%
+  );
+
+  pointer-events: none;
+
+}
+
+.sm {
+
+backdrop-filter: blur(8px);
+
+}
+
+.md {
+
+backdrop-filter: blur(16px);
+
+}
+
+.lg {
+
+backdrop-filter: blur(24px);
+
+}
+
+.none {
+
+padding:0;
+
+}
+
+.sm:not(.card) {
+
+padding:12px;
+
+}
+
+.md:not(.card) {
+
+padding:20px;
+
+}
+
+.lg:not(.card) {
+
+padding:32px;
+
+}
+
+.hover:hover{
+
+transform:translateY(-6px);
+
+border-color:#D4AF37;
+
+box-shadow:
+
+0 0 40px rgba(212,175,55,.22),
+
+0 18px 50px rgba(0,0,0,.55);
+
+}

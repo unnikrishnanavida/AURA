@@ -1,0 +1,37 @@
+:root {
+
+  /* Brand */
+
+  --color-primary: #D4AF37;
+  --color-primary-light: #F5D76E;
+
+  /* Background */
+
+  --color-background: #05070A;
+  --color-surface: #0D1117;
+  --color-card: #111827;
+
+  /* Text */
+
+  --color-white: #F8FAFC;
+  --color-gray-100: #E2E8F0;
+  --color-gray-300: #CBD5E1;
+  --color-gray-500: #94A3B8;
+
+  /* Borders */
+
+  --color-border: #1F2937;
+
+  /* Status */
+
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  /* AI */
+
+  --color-blue: #3B82F6;
+  --color-purple: #8B5CF6;
+  --color-cyan: #06B6D4;
+
+}

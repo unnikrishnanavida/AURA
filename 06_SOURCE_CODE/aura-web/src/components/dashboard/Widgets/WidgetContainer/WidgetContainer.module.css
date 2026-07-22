@@ -1,0 +1,46 @@
+.container{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:24px;
+
+    padding:24px;
+
+    border-radius:18px;
+
+    background:rgba(19,23,32,.82);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(18px);
+
+    transition:
+        border-color .25s ease,
+        transform .25s ease,
+        box-shadow .25s ease;
+
+}
+
+.hoverable:hover{
+
+    transform:translateY(-4px);
+
+    border-color:#D4AF37;
+
+    box-shadow:0 0 28px rgba(212,175,55,.12);
+
+}
+
+@media(max-width:768px){
+
+.container{
+
+padding:18px;
+
+gap:18px;
+
+}
+
+}

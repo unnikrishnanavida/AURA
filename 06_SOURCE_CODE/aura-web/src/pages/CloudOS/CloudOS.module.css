@@ -1,0 +1,161 @@
+.page{
+    display:flex;
+    flex-direction:column;
+    gap:32px;
+    min-height:100vh;
+    padding:32px;
+    background:#0B0F19;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:24px;
+}
+
+.title{
+    color:#FFF;
+    font-size:2rem;
+    font-weight:700;
+}
+
+.subtitle{
+    margin-top:8px;
+    color:#94A3B8;
+}
+
+.primaryButton{
+    padding:12px 22px;
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:600;
+    color:#000;
+    background:linear-gradient(135deg,#D4AF37,#FFD95A);
+}
+
+.toolbar{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+}
+
+.select{
+    padding:12px 16px;
+    border-radius:12px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    color:#FFF;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+}
+
+.statCard{
+    padding:24px;
+    border-radius:18px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(212,175,55,.15);
+    backdrop-filter:blur(20px);
+}
+
+.statTitle{
+    color:#94A3B8;
+}
+
+.statValue{
+    margin-top:10px;
+    color:#FFF;
+    font-size:2rem;
+    font-weight:700;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(400px,1fr));
+    gap:24px;
+}
+
+.card{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding:24px;
+    border-radius:18px;
+    border:1px solid rgba(212,175,55,.15);
+    background:rgba(255,255,255,.04);
+    backdrop-filter:blur(20px);
+}
+
+.cardTitle{
+    color:#FFF;
+    font-size:1.2rem;
+    font-weight:700;
+}
+
+.meta{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:14px;
+}
+
+.metaLabel{
+    color:#94A3B8;
+    font-size:.85rem;
+}
+
+.metaValue{
+    color:#FFF;
+    font-weight:600;
+}
+
+.footer{
+    display:flex;
+    justify-content:space-between;
+    margin-top:auto;
+    padding-top:18px;
+    border-top:1px solid rgba(255,255,255,.08);
+}
+
+.footerButton{
+    padding:10px 16px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:rgba(255,255,255,.05);
+    color:#FFF;
+}
+
+.footerButton:hover{
+    background:rgba(212,175,55,.15);
+    color:#D4AF37;
+}
+
+@media(max-width:1024px){
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:768px){
+
+    .page{
+        padding:20px;
+    }
+
+    .stats{
+        grid-template-columns:1fr;
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+}

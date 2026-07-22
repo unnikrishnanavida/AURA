@@ -1,0 +1,134 @@
+.badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:6px;
+
+    padding:6px 12px;
+
+    border-radius:999px;
+
+    font-size:.75rem;
+
+    font-weight:600;
+
+    line-height:1;
+
+    white-space:nowrap;
+
+    border:1px solid transparent;
+
+    transition:
+        background-color .25s ease,
+        border-color .25s ease,
+        color .25s ease;
+
+}
+
+/* Primary */
+
+.primary{
+
+    background:rgba(212,175,55,.14);
+
+    color:#D4AF37;
+
+}
+
+/* Success */
+
+.success{
+
+    background:rgba(34,197,94,.14);
+
+    color:#22C55E;
+
+}
+
+/* Warning */
+
+.warning{
+
+    background:rgba(250,204,21,.14);
+
+    color:#FACC15;
+
+}
+
+/* Danger */
+
+.danger{
+
+    background:rgba(239,68,68,.14);
+
+    color:#EF4444;
+
+}
+
+/* Info */
+
+.info{
+
+    background:rgba(59,130,246,.14);
+
+    color:#3B82F6;
+
+}
+
+/* Neutral */
+
+.neutral{
+
+    background:rgba(148,163,184,.14);
+
+    color:#CBD5E1;
+
+}
+
+/* Outlined */
+
+.outlined{
+
+    background:transparent;
+
+}
+
+.primary.outlined{
+
+    border-color:#D4AF37;
+
+}
+
+.success.outlined{
+
+    border-color:#22C55E;
+
+}
+
+.warning.outlined{
+
+    border-color:#FACC15;
+
+}
+
+.danger.outlined{
+
+    border-color:#EF4444;
+
+}
+
+.info.outlined{
+
+    border-color:#3B82F6;
+
+}
+
+.neutral.outlined{
+
+    border-color:#94A3B8;
+
+}

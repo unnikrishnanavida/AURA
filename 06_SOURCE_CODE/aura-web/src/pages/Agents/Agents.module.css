@@ -1,0 +1,356 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding: 32px;
+    width: 100%;
+    min-height: 100vh;
+    background: #0B0F19;
+}
+
+/* ===========================
+   Header
+=========================== */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.titleSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.subtitle {
+    font-size: 0.95rem;
+    color: #94A3B8;
+    max-width: 700px;
+}
+
+.actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.createButton {
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 12px 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #D4AF37, #F4D160);
+    color: #000;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.createButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(212,175,55,.25);
+}
+
+/* ===========================
+   Search & Filters
+=========================== */
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.searchContainer {
+    flex: 1;
+    min-width: 260px;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(212,175,55,.18);
+    background: rgba(255,255,255,.04);
+    color: white;
+    font-size: .95rem;
+    outline: none;
+}
+
+.searchInput::placeholder {
+    color: #64748B;
+}
+
+.filterGroup {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.select {
+    min-width: 170px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.04);
+    color: white;
+    border: 1px solid rgba(212,175,55,.15);
+}
+
+/* ===========================
+   Stats
+=========================== */
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 20px;
+}
+
+.statCard {
+    background: rgba(255,255,255,.04);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(212,175,55,.15);
+    border-radius: 18px;
+    padding: 22px;
+    transition: .3s;
+}
+
+.statCard:hover {
+    border-color: rgba(212,175,55,.35);
+    transform: translateY(-4px);
+}
+
+.statLabel {
+    color: #94A3B8;
+    font-size: .9rem;
+}
+
+.statValue {
+    margin-top: 12px;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+/* ===========================
+   Agent Grid
+=========================== */
+
+.agentGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(360px,1fr));
+    gap: 24px;
+}
+
+.agentCard {
+    background: rgba(255,255,255,.04);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(212,175,55,.15);
+    padding: 24px;
+    transition: .3s;
+}
+
+.agentCard:hover {
+    transform: translateY(-6px);
+    border-color: rgba(212,175,55,.35);
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+}
+
+.agentHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agentName {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.agentModel {
+    color: #94A3B8;
+    font-size: .9rem;
+    margin-top: 6px;
+}
+
+/* ===========================
+   Status
+=========================== */
+
+.status {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.online {
+    background: rgba(16,185,129,.15);
+    color: #10B981;
+}
+
+.busy {
+    background: rgba(245,158,11,.15);
+    color: #F59E0B;
+}
+
+.idle {
+    background: rgba(59,130,246,.15);
+    color: #3B82F6;
+}
+
+.offline {
+    background: rgba(100,116,139,.15);
+    color: #94A3B8;
+}
+
+.error {
+    background: rgba(239,68,68,.15);
+    color: #EF4444;
+}
+
+/* ===========================
+   Metrics
+=========================== */
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 18px;
+    margin-top: 24px;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.metricLabel {
+    color: #94A3B8;
+    font-size: .8rem;
+}
+
+.metricValue {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ===========================
+   Footer
+=========================== */
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.buttonGroup {
+    display: flex;
+    gap: 10px;
+}
+
+.iconButton {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255,255,255,.05);
+    color: white;
+    transition: .25s;
+}
+
+.iconButton:hover {
+    background: rgba(212,175,55,.18);
+    color: #D4AF37;
+}
+
+.lastSeen {
+    color: #94A3B8;
+    font-size: .8rem;
+}
+
+/* ===========================
+   Empty State
+=========================== */
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.emptyTitle {
+    color: white;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.emptyText {
+    color: #94A3B8;
+    max-width: 500px;
+}
+
+/* ===========================
+   Responsive
+=========================== */
+
+@media (max-width:1200px) {
+
+    .statsGrid {
+        grid-template-columns: repeat(2,1fr);
+    }
+
+}
+
+@media (max-width:768px) {
+
+    .page {
+        padding: 20px;
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .toolbar {
+        flex-direction: column;
+    }
+
+    .filterGroup {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .select {
+        width: 100%;
+    }
+
+    .agentGrid {
+        grid-template-columns: 1fr;
+    }
+
+}

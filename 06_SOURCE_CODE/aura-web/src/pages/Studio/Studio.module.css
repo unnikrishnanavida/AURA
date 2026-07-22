@@ -1,0 +1,152 @@
+.page{
+    display:flex;
+    flex-direction:column;
+    gap:32px;
+    min-height:100vh;
+    padding:32px;
+    background:#0B0F19;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+.title{
+    color:#FFF;
+    font-size:2rem;
+    font-weight:700;
+}
+
+.subtitle{
+    margin-top:8px;
+    color:#94A3B8;
+}
+
+.primaryButton{
+    padding:12px 24px;
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:600;
+    color:#000;
+    background:linear-gradient(135deg,#D4AF37,#FFD95A);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:320px 1fr 340px;
+    gap:24px;
+}
+
+.panel{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding:24px;
+    border-radius:18px;
+    border:1px solid rgba(212,175,55,.15);
+    background:rgba(255,255,255,.04);
+    backdrop-filter:blur(20px);
+}
+
+.panelTitle{
+    color:#FFF;
+    font-size:1.15rem;
+    font-weight:700;
+}
+
+.toolbox{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.tool{
+    padding:14px;
+    border-radius:12px;
+    cursor:pointer;
+    color:#FFF;
+    background:rgba(255,255,255,.05);
+    transition:.25s;
+}
+
+.tool:hover{
+    background:rgba(212,175,55,.12);
+}
+
+.canvas{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+    min-height:650px;
+}
+
+.workflowNode{
+    padding:18px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.05);
+}
+
+.nodeTitle{
+    color:#FFF;
+    font-weight:600;
+}
+
+.nodeType{
+    margin-top:8px;
+    color:#D4AF37;
+    font-size:.85rem;
+}
+
+.nodeDescription{
+    margin-top:10px;
+    color:#CBD5E1;
+    line-height:1.6;
+}
+
+.formGroup{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.label{
+    color:#94A3B8;
+}
+
+.input{
+    padding:12px;
+    border:none;
+    border-radius:12px;
+    outline:none;
+    color:#FFF;
+    background:rgba(255,255,255,.05);
+}
+
+.slider{
+    width:100%;
+}
+
+.deployButton{
+    margin-top:auto;
+    padding:14px;
+    border:none;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:700;
+    color:#000;
+    background:linear-gradient(135deg,#D4AF37,#FFD95A);
+}
+
+@media(max-width:1200px){
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+}
