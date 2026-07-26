@@ -1,0 +1,5 @@
+﻿[project]
+name = "aura-brain"
+version = "0.1.0"
+description = "AURA Brain scaffold"
+requires-python = ">=3.12"

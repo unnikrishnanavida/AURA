@@ -1,9 +1,9 @@
-cd "C:\Users\navid\Desktop\AURA\01_FOUNDATION\Architecture\ADS"
+cd "C:\Users\navid\Desktop\AURA\01_FOUNDATION\Architecture\ADR"
 
-Remove-Item -Recurse -Force .\ADS-001 -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force .\ADR-001 -ErrorAction SilentlyContinue
 
-mkdir ADS-001
-cd ADS-001
+mkdir ADR-001
+cd ADR-001
 
 New-Item 00-index.md -ItemType File
 New-Item 01-document-control.md -ItemType File
@@ -21,4 +21,4 @@ New-Item 12-design-guidelines.md -ItemType File
 New-Item 13-future-design-roadmap.md -ItemType File
 New-Item 14-references.md -ItemType File
 New-Item 15-appendices.md -ItemType File
-New-Item AURA-ADS-001.md -ItemType File
+New-Item AURA-ADR-001.md -ItemType File
