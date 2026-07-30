@@ -1,0 +1,18 @@
+[project]
+name = "aura-sdk"
+version = "0.1.0"
+description = "Aura SDK package"
+authors = [
+  { name = "Aura Team" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+
+[project.dependencies]
+requests = ">=2.31.0"
+PyYAML = ">=6.0"
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
