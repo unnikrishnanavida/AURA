@@ -1,0 +1,2 @@
+class DIError(Exception):
+    pass

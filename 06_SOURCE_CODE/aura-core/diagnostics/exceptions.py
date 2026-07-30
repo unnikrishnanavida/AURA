@@ -1,0 +1,2 @@
+class DiagnosticsError(Exception):
+    pass
