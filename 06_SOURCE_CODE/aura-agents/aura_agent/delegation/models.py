@@ -37,9 +37,13 @@ class TaskRequirements:
     max_cost: float | None = None
 
 
-@dataclass(frozen=True)
+@dataclass
 class DelegatedTask:
-    """A task delegated by an orchestrator to a worker."""
+    """A task delegated by an orchestrator to a worker.
+
+    intentionally mutable: the delegation engine advances ``status`` and
+    ``worker`` through the task lifecycle.
+    """
 
     task_id: str
     delegator: AgentId
