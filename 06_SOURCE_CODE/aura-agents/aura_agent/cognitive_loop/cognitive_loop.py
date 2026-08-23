@@ -217,7 +217,11 @@ class CognitiveLoop:
             return self._terminate("hard denial during execution")
 
         if result.success:
-            state.update(dict(step.expected_effects or {"completed": True}))
+            # observed state = expected effects + the tool's actual output
+            state.update(dict(step.expected_effects or {}))
+            primary = result.primary
+            if primary is not None and primary.output:
+                state.update(primary.output)
             ctx.step_index += 1
             ctx.retries = 0
             if ctx.step_index >= len(ctx.plan.steps):

@@ -28,6 +28,7 @@ class ProvenanceNode:
     event_id: str
     event_type: str
     payload: dict
+    timestamp: str = ""  # ISO timestamp from the recorded AgentEvent
 
 
 @dataclass(frozen=True)
@@ -51,37 +52,56 @@ class ProvenanceGraph:
             event_id=event.event_id,
             event_type=event.event_type,
             payload=event.payload,
+            timestamp=event.timestamp.isoformat(),
         )
 
     def add_link(self, source: str, target: str, relation: str) -> None:
         self.links.append(ProvenanceLink(source, target, relation))
 
     def trail(self, event_id: str) -> list[str]:
-        """Return the event chain causally preceding ``event_id``.
+        """Return the causal chain ending at ``event_id``.
 
-        Uses the chronological ``follows`` links: the trail is the sequence of
-        event ids from the earliest reachable event up to and including
-        ``event_id``.
+        Uses the chronological ``follows`` links: find the earliest event in
+        the chain (one with no incoming ``follows`` link) and walk forward to
+        ``event_id``, producing the ordered cause-effect sequence.
         """
         by_source: dict[str, list[ProvenanceLink]] = {}
+        by_target: dict[str, list[ProvenanceLink]] = {}
         for link in self.links:
             by_source.setdefault(link.source, []).append(link)
+            by_target.setdefault(link.target, []).append(link)
 
-        chain: list[str] = []
-        chain_set: set[str] = set()
-        current: str | None = event_id
-        while current is not None:
-            if current in chain_set:
+        # find the first node in the chain
+        start = event_id
+        visited = set()
+        while start in by_target:
+            # move to the predecessor via the follows link
+            pred = None
+            for link in by_target.get(start, ()):
+                if link.relation == "follows":
+                    pred = link.source
+                    break
+            if pred is None or pred in visited:
                 break
+            visited.add(start)
+            start = pred
+
+        # walk forward from start to event_id
+        chain: list[str] = []
+        current: str | None = start
+        chain_set: set[str] = set()
+        while current is not None and current not in chain_set:
             chain.append(current)
             chain_set.add(current)
+            if current == event_id:
+                break
             for link in by_source.get(current, []):
                 if link.relation == "follows":
                     current = link.target
                     break
             else:
                 current = None
-        return list(reversed(chain))
+        return chain
 class ProvenanceEngine:
     """Builds provenance graphs from a flight recorder's event stream.
 
@@ -119,7 +139,11 @@ class ProvenanceEngine:
         if last_event_id is None:
             if not graph.nodes:
                 return []
-            last_event_id = max(graph.nodes, key=lambda eid: graph.nodes[eid].event_id)
+            # chronological endpoint: latest recorded timestamp wins
+            last_event_id = max(
+                graph.nodes,
+                key=lambda eid: graph.nodes[eid].timestamp,
+            )
         return [
             {
                 "event_id": node.event_id,

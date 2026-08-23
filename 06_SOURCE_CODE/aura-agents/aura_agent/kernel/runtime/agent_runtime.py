@@ -38,6 +38,10 @@ class RuntimeComponents:
     telemetry: Any = None
     logger: Any = None
     loop_controller: Any = None
+    budget_engine: Any = None
+    capability_registry: Any = None
+    tool_registry: Any = None
+    reputation_engine: Any = None
 
 
 @dataclass

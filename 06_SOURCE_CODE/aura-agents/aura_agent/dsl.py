@@ -172,6 +172,9 @@ class AgentBuilder:
             telemetry=telemetry,
             logger=logger,
             loop_controller=loop_controller,
+            budget_engine=budgets,
+            capability_registry=caps,
+            tool_registry=tool_registry,
         )
 
         return AgentRuntime(
