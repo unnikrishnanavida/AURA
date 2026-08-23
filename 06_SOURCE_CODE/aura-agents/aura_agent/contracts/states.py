@@ -43,7 +43,13 @@ class ExecutionState(enum.Enum):
 
 #: Allowed transitions. Maps source state -> set of target states.
 transition_table: ClassVar[dict[ExecutionState, frozenset[ExecutionState]]] = {
-    ExecutionState.PENDING: frozenset({ExecutionState.READY, ExecutionState.CANCELLED}),
+    ExecutionState.PENDING: frozenset(
+        {
+            ExecutionState.READY,
+            ExecutionState.CANCELLED,
+            ExecutionState.FAILED,  # validation failure before dispatch
+        }
+    ),
     ExecutionState.READY: frozenset(
         {ExecutionState.RUNNING, ExecutionState.CANCELLED, ExecutionState.BLOCKED}
     ),

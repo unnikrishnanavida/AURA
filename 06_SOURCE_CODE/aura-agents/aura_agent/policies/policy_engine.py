@@ -37,7 +37,12 @@ class PolicyEngine:
 
     @staticmethod
     def _specificity_score(p: PermissionPolicy) -> int:
-        return -(p.action.count("*") + p.resource.count("*"))
+        """A policy is more specific when it has *more literal characters* in
+        its action and resource patterns (fewer ``*`` wildcards). The
+        explicit deny/allow patterns outrank the wildcard base rules."""
+        literal_action = len(p.action.replace("*", ""))
+        literal_resource = len(p.resource.replace("*", ""))
+        return literal_action + literal_resource
 
     def _rank(self, p: PermissionPolicy) -> tuple[int, int, int]:
         """Rank a policy: specificity, then deny-first, then priority.

@@ -83,6 +83,90 @@ class GoalEngine:
     @property
     def updates(self) -> list[GoalUpdate]:
         return list(self._updates)
+# -- lifecycle -------------------------------------------------------------
+    def create_goal(
+        self,
+        *,
+        agent_id: AgentId,
+        description: str,
+        priority: GoalPriority = GoalPriority.NORMAL,
+        constraints: list[GoalConstraint] | None = None,
+        success_criteria: list[str] | None = None,
+        metadata: dict | None = None,
+        goal_id: GoalId | None = None,
+    ) -> Goal:
+        """Create and register a validated goal."""
+        description = description.strip()
+        if not description:
+            raise ValidationFailure("goal description must be non-empty")
+        criteria = [SuccessCriterion(condition=c) for c in (success_criteria or [])]
+        goal = Goal(
+            id=goal_id or GoalId.new(),
+            agent_id=agent_id,
+            description=description,
+            priority=priority,
+            constraints=list(constraints or []),
+            success_criteria=criteria,
+            metadata=dict(metadata or {}),
+        )
+        self._goals[goal.id] = goal
+        return goal
+
+    def activate(self, goal_id: GoalId) -> Goal:
+        goal = self.get(goal_id)
+        self._transition(goal, GoalStatus.ACTIVE)
+        return goal
+
+    def start(self, goal_id: GoalId) -> Goal:
+        goal = self.get(goal_id)
+        self._transition(goal, GoalStatus.IN_PROGRESS)
+        return goal
+
+    def block(self, goal_id: GoalId, *, reason: str = "") -> Goal:
+        goal = self.get(goal_id)
+        if goal.status not in {
+            GoalStatus.ACTIVE,
+            GoalStatus.IN_PROGRESS,
+            GoalStatus.CREATED,
+        }:
+            raise ValidationFailure(
+                f"cannot block goal in status {goal.status.value}"
+            )
+        goal.metadata["block_reason"] = reason
+        self._transition(goal, GoalStatus.BLOCKED)
+        return goal
+
+    def unblock(self, goal_id: GoalId) -> Goal:
+        goal = self.get(goal_id)
+        if goal.status is not GoalStatus.BLOCKED:
+            raise ValidationFailure(f"goal {goal.id} is not blocked")
+        self._transition(goal, GoalStatus.ACTIVE)
+        return goal
+
+    def mark_completed(self, goal_id: GoalId) -> Goal:
+        goal = self.get(goal_id)
+        goal.completed_at = self._clock()
+        self._transition(goal, GoalStatus.COMPLETED)
+        return goal
+
+    def mark_partial(self, goal_id: GoalId, *, reason: str = "") -> Goal:
+        goal = self.get(goal_id)
+        goal.metadata["partial_reason"] = reason
+        self._transition(goal, GoalStatus.PARTIAL)
+        return goal
+
+    def mark_failed(self, goal_id: GoalId, *, reason: str = "") -> Goal:
+        goal = self.get(goal_id)
+        goal.metadata["failure_reason"] = reason
+        goal.completed_at = self._clock()
+        self._transition(goal, GoalStatus.FAILED)
+        return goal
+
+    def cancel(self, goal_id: GoalId, *, reason: str = "") -> Goal:
+        goal = self.get(goal_id)
+        goal.metadata["cancel_reason"] = reason
+        self._transition(goal, GoalStatus.CANCELLED)
+        return goal
 # -- decomposition ---------------------------------------------------------
     def decompose(
         self, goal_id: GoalId, specs: list[SubgoalSpec] | None = None
