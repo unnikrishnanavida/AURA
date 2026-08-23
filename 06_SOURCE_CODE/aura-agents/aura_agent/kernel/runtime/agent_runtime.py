@@ -13,8 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from aura_agent.contracts.ids import AgentId, GoalId
-from aura_agent.cognitive_loop import CognitiveLoop, CognitiveLoopSettings
-from aura_agent.goals.models.goal import Goal, GoalPriority
+from aura_agent.goals.models.goal import Goal
 
 __all__ = ["AgentRuntime", "RuntimeComponents", "RuntimeDiagnostics"]
 

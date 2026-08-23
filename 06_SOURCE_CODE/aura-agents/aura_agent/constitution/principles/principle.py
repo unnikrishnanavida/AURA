@@ -7,7 +7,7 @@ violate, even in fully autonomous mode. They govern *capabilities* and
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 __all__ = ["Principle", "PrincipleCategory"]
 

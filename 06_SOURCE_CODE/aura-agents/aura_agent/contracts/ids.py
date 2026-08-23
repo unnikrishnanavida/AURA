@@ -9,9 +9,11 @@ everywhere without risk of circular imports.
 from __future__ import annotations
 
 import uuid
-from typing import ClassVar
+from typing import ClassVar, TypeVar
 
 __all__ = ["Id", "AgentId", "GoalId", "ActionId", "ExecutionId"]
+
+_Self = TypeVar("_Self", bound="Id")
 
 
 class Id(str):
@@ -23,7 +25,7 @@ class Id(str):
 
     _prefix: ClassVar[str]
 
-    def __new__(cls, value: str) -> "Id":
+    def __new__(cls, value: str) -> Id:
         if not isinstance(value, str) or not value:
             raise ValueError(f"{cls.__name__} must be a non-empty string")
         if not value.startswith(cls._prefix):
@@ -33,7 +35,7 @@ class Id(str):
         return super().__new__(cls, value)
 
     @classmethod
-    def new(cls) -> "Id":
+    def new(cls: type[_Self]) -> _Self:
         """Create a new unique identifier of this class."""
         return cls(f"{cls._prefix}{uuid.uuid4().hex}")
 

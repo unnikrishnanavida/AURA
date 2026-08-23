@@ -55,4 +55,4 @@ class AgentFlightRecorder:
         self._store.clear()
 
     def __len__(self) -> int:
-        return len(self._store) if hasattr(self._store, "__len__") else 0
+        return len(self._store.query())

@@ -18,7 +18,7 @@ from aura_agent.execution_bridge import ExecutionDependencies, ExecutionEngine
 from aura_agent.flight_recorder import AgentFlightRecorder
 from aura_agent.genome import AgentGenome
 from aura_agent.goals import GoalEngine
-from aura_agent.identity import AgentIdentity, AgentVersion, IdentityRegistry
+from aura_agent.identity import AgentIdentity, AgentVersion
 from aura_agent.kernel.runtime.agent_runtime import AgentRuntime, RuntimeComponents
 from aura_agent.learning_bridge import LearningBridge
 from aura_agent.loop_control import LoopController
@@ -29,7 +29,6 @@ from aura_agent.policies import Decision, PermissionPolicy, PolicyEngine
 from aura_agent.policies.safety import SafetyEvaluator
 from aura_agent.reasoning_bridge import ReasoningBridge
 from aura_agent.recovery import RecoveryEngine
-from aura_agent.reflection import ReflectionEngine
 from aura_agent.telemetry import AgentLogger, Telemetry
 from aura_agent.tools import ToolRegistry
 
@@ -46,28 +45,24 @@ class AgentBuilder:
         self._max_iterations = 20
         self._initial_capabilities: list[str] = []
         self._tools: list = []
-        self._allow = False
-        self._allow_action = "*"
-        self._allow_resource = "*"
+        self._allow_rules: list[tuple[str, str]] = []
 
     # -- hooks -----------------------------------------------------------------
-    def with_autonomy(self, mode: AutonomyMode) -> "AgentBuilder":
+    def with_autonomy(self, mode: AutonomyMode) -> AgentBuilder:
         self._autonomy_mode = mode
         return self
 
-    def with_capability(self, name: str) -> "AgentBuilder":
+    def with_capability(self, name: str) -> AgentBuilder:
         self._initial_capabilities.append(name)
         return self
 
-    def with_tool(self, tool) -> "AgentBuilder":
+    def with_tool(self, tool) -> AgentBuilder:
         self._tools.append(tool)
         return self
 
-    def allow(self, *, action: str, resource: str = "*") -> "AgentBuilder":
+    def allow(self, *, action: str, resource: str = "*") -> AgentBuilder:
         """Explicitly permit an action family; default stays deny."""
-        self._allow = True
-        self._allow_action = action
-        self._allow_resource = resource
+        self._allow_rules.append((action, resource))
         return self
 
     def build(self) -> AgentRuntime:
@@ -96,13 +91,13 @@ class AgentBuilder:
                 resource="*",
             )
         )
-        if self._allow:
+        for i, (action, resource) in enumerate(self._allow_rules):
             policies.add_policy(
                 PermissionPolicy(
-                    name="explicit-allow",
+                    name=f"allow-{i}",
                     effect=Decision.ALLOW,
-                    action=self._allow_action,
-                    resource=self._allow_resource,
+                    action=action,
+                    resource=resource,
                 )
             )
 

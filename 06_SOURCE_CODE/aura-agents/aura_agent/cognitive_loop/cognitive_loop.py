@@ -198,7 +198,7 @@ class CognitiveLoop:
         if signals:
             raise LoopDetected("; ".join(f"{s.reason}: {s.detail}" for s in signals))
 
-        from aura_agent.contracts.ids import ActionId
+        from aura_agent.contracts.ids import ActionId, ExecutionId
         from aura_agent.execution_bridge import ExecutionRequest
         from aura_agent.recovery import RecoveryRequest, RetryPolicy
 
@@ -232,7 +232,7 @@ class CognitiveLoop:
         failure_class = primary.failure_class if primary else None
         recovery = self._recovery.decide(
             RecoveryRequest(
-                execution_id="exe-loop",
+                execution_id=ExecutionId(f"exe-loop-{goal_id}"),
                 goal_id=goal_id,
                 tool_name=step.tool_name,
                 failure_class=failure_class or FailureClass.UNKNOWN,

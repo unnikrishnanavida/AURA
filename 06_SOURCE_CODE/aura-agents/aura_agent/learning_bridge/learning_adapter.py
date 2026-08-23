@@ -14,7 +14,6 @@ internal runtime values.
 
 from __future__ import annotations
 
-from aura_agent.contracts.ids import AgentId
 from aura_agent.genome.agent_genome import AgentGenome, GenomeUpdate
 from aura_agent.reflection.models import ImprovementSignal
 

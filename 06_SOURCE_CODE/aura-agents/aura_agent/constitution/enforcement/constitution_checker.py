@@ -35,7 +35,6 @@ class ConstitutionChecker:
     def check(self, action: str, capability: str) -> EnforcementDecision:
         """Check an action+capability against every principle."""
         reasons: list[str] = []
-        violations: list[str] = []
         review_needed = False
 
         for principle in self._principles:

@@ -10,7 +10,6 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import ClassVar
 
 from aura_agent.contracts.errors import InvalidStateTransition
 
@@ -42,7 +41,7 @@ class ExecutionState(enum.Enum):
 
 
 #: Allowed transitions. Maps source state -> set of target states.
-transition_table: ClassVar[dict[ExecutionState, frozenset[ExecutionState]]] = {
+transition_table: dict[ExecutionState, frozenset[ExecutionState]] = {
     ExecutionState.PENDING: frozenset(
         {
             ExecutionState.READY,

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import enum
 import time
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
@@ -146,7 +147,7 @@ class Tool:
             executor.shutdown(wait=False)
             raise ActionTimeout(
                 f"tool {self.name!r} exceeded its {self.timeout_s:g}s timeout"
-            )
+            ) from None
         except Exception as exc:  # noqa: BLE001 - wrapped into domain error
             executor.shutdown(wait=True)
             raise ToolExecutionError(

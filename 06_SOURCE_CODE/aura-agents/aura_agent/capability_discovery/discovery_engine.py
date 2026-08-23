@@ -17,7 +17,6 @@ from dataclasses import dataclass
 
 from aura_agent.capability_discovery.models import CapabilityMatch
 from aura_agent.capability_discovery.registry.agent_registry import (
-    AgentCapabilityEntry,
     AgentCapabilityRegistry,
 )
 from aura_agent.capability_discovery.registry.capability_registry import (

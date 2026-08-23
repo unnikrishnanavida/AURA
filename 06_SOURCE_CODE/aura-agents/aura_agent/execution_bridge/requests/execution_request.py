@@ -28,5 +28,5 @@ class ExecutionRequest:
     execution_id: ExecutionId | None = None
     idempotency_key: str | None = None
 
-    def with_execution_id(self, execution_id: ExecutionId) -> "ExecutionRequest":
+    def with_execution_id(self, execution_id: ExecutionId) -> ExecutionRequest:
         return replace(self, execution_id=execution_id)

@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from aura_agent.contracts.ids import AgentId, GoalId
+from aura_agent.contracts.ids import GoalId
 from aura_agent.goals.models.goal import Goal, GoalConstraint, SuccessCriterion
 
 __all__ = ["GoalDecomposer", "DecompositionPlan", "SubgoalSpec"]

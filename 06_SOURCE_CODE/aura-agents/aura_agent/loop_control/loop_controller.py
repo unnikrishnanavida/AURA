@@ -12,8 +12,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from aura_agent.contracts.errors import LoopDetected
-
 __all__ = ["LoopSignal", "LoopController", "LoopReason"]
 
 

@@ -27,7 +27,7 @@ class CognitiveStage(enum.Enum):
     REFLECTION = "reflection"
     TERMINATED = "terminated"
 
-    def next(self) -> "CognitiveStage":
+    def next(self) -> CognitiveStage:
         order = [
             CognitiveStage.OBSERVATION,
             CognitiveStage.INTERPRETATION,

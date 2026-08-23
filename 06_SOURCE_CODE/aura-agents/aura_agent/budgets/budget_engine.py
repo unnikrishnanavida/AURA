@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from aura_agent.budgets.models.agent_budget import AgentBudget, BudgetLedger
 from aura_agent.contracts.errors import BudgetExceeded
-from aura_agent.contracts.ids import ExecutionId, GoalId
+from aura_agent.contracts.ids import ExecutionId
 
 __all__ = ["BudgetEngine", "BudgetDecision"]
 

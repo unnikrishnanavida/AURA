@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Iterable
-
 from aura_agent.tools.models import Tool
 
 __all__ = ["ToolRegistry"]

@@ -8,9 +8,8 @@ evidence-based -- it never guesses.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
-from aura_agent.goals.models.goal import Goal, GoalConstraint, GoalId
+from aura_agent.goals.models.goal import Goal, GoalId
 
 __all__ = ["GoalConflict", "ConflictDetector"]
 

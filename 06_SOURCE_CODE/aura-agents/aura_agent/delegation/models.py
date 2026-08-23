@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from aura_agent.contracts.ids import AgentId, GoalId
+from aura_agent.contracts.ids import AgentId
 
 __all__ = ["DelegatedTask", "TaskStatus", "Proposal", "TaskRequirements"]
 

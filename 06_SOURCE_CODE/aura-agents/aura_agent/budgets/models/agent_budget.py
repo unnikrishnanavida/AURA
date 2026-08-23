@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from typing import Any
+from dataclasses import dataclass
 
 from aura_agent.contracts.ids import AgentId, ExecutionId, GoalId
 
@@ -52,7 +50,7 @@ class BudgetUsage:
     execution_id: ExecutionId
     consumed: dict[str, float]
 
-    def clone(self) -> "BudgetUsage":
+    def clone(self) -> BudgetUsage:
         return BudgetUsage(self.execution_id, dict(self.consumed))
 
 

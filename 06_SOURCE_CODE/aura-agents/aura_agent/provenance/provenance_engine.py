@@ -124,7 +124,7 @@ class ProvenanceEngine:
 
         for chain in grouped.values():
             ordered = sorted(chain, key=lambda e: (e.timestamp, e.event_id))
-            for prev, nxt in zip(ordered, ordered[1:]):
+            for prev, nxt in zip(ordered, ordered[1:], strict=False):
                 graph.add_link(prev.event_id, nxt.event_id, "follows")
         return graph
 

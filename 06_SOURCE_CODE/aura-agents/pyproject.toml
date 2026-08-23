@@ -19,3 +19,24 @@ pydantic = { version = ">=2.0" }
 
 [tool.setuptools.packages.find]
 where = ["aura_agent"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = false
+exclude = ["tests/"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["aura_agent"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP"]
+ignore = ["E501", "B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

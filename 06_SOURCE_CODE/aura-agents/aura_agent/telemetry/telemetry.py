@@ -11,7 +11,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-__all__ = ["AgentMetrics", "TelemetryCollector"]
+__all__ = ["AgentMetrics", "Telemetry"]
 
 
 @dataclass

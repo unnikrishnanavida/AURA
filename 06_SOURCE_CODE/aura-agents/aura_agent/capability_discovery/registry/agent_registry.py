@@ -8,7 +8,7 @@ Availability is a first-class field, matching the registry semantics.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from aura_agent.contracts.ids import AgentId
 

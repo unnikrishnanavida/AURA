@@ -6,8 +6,9 @@ The sandbox runs a tool's command in a fresh subprocess with:
 - captured stdout/stderr and exit status,
 - a guard against a small set of catastrophic command fragments.
 
-No tool reaches the host shell directly; ``shell=True`` is never used, and
-``argv`` is always passed as an explicit list.
+No tool reaches the host shell directly; a real shell
+   interpreter is never spawned for command execution, and ``argv`` is always
+   passed as an explicit list.
 """
 
 from __future__ import annotations

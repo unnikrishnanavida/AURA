@@ -5,9 +5,8 @@ from __future__ import annotations
 import enum
 import re
 from dataclasses import dataclass, field
-from typing import Any
 
-from aura_agent.contracts.ids import AgentId, ExecutionId, GoalId
+from aura_agent.contracts.ids import AgentId
 
 __all__ = ["PermissionRequest", "PermissionDecision", "Decision", "PermissionPolicy"]
 

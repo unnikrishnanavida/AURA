@@ -11,9 +11,9 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from aura_agent.planning_bridge.models import (
+    PlanningRequest,
     PlanResult,
     PlanStep,
-    PlanningRequest,
 )
 
 __all__ = ["PlanningProvider", "GoalRefinementPlanner", "PlanningBridge", "PlanValidator"]

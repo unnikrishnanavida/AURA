@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import time as _time
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Protocol
 
 from aura_agent.contracts.errors import (
@@ -70,7 +71,8 @@ class ExecutionEngine:
 
     def __init__(self, deps: ExecutionDependencies) -> None:
         self._deps = deps
-        self._clock = deps.clock or _time.time
+        self._clock = deps.clock or datetime.now  # returns datetime (UTC-aware)
+        self._monotonic = _time.monotonic
 
     def execute(self, request: ExecutionRequest) -> ExecutionResult:
         """Run the full guarded pipeline for a single action request."""
@@ -152,6 +154,7 @@ class ExecutionEngine:
             goal_id=request.goal_id,
         )
         started = self._clock()
+        started_mono = self._monotonic()
         try:
             tool_result = tool.execute(request.inputs, context=context)
         except Exception as exc:  # noqa: BLE001 - classified below
@@ -179,7 +182,7 @@ class ExecutionEngine:
                 finished_at=self._clock(),
             )
 
-        duration = self._clock() - started
+        duration = self._monotonic() - started_mono
         if budget is not None:
             self._deps.budget_engine.consume(execution_id, dimension="actions", amount=1.0)
             self._deps.budget_engine.consume(execution_id, dimension="time_s", amount=duration)
