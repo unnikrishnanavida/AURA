@@ -1,0 +1,27 @@
+AURA Memory ranking generic module for confidence.
+
+from __future__ import annotations
+import logging
+import time
+from typing import Any, Dict
+
+logger = logging.getLogger(__name__)
+
+
+class Confidence:
+    '''Generic module for ranking.confidence.'''
+
+    def health_check(self) -> bool:
+        '''Return whether the module is healthy.'''
+        return True
+
+    def info(self) -> Dict[str, Any]:
+        '''Return runtime module metadata.'''
+        return {"module": __name__, "class": self.__class__.__name__, "timestamp": time.time()}
+
+    def describe(self) -> Dict[str, str]:
+        '''Return a descriptive summary of this module.'''
+        return {"package": "ranking", "module": "confidence"}
+
+
+__all__ = ["Confidence"]

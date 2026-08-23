@@ -1,3 +1,11 @@
-AURA SDK Registry constants.
+"""AURA SDK Registry constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_REGISTRY_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.registry"
+SUPPORTED_REGISTRY = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_REGISTRY_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_REGISTRY",
+]

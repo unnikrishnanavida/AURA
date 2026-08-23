@@ -1,4 +1,5 @@
-AURA SDK Middleware context.
+"""AURA SDK Middleware context.
+"""
 
 class Context:
     """Placeholder implementation for aura_sdk.middleware.context."""

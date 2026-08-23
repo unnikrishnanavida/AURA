@@ -1,4 +1,5 @@
-AURA SDK Client diagnostics.
+"""AURA SDK Client diagnostics.
+"""
 
 class Diagnostics:
     """Placeholder implementation for aura_sdk.client.diagnostics."""

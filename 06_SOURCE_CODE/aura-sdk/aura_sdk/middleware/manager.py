@@ -1,4 +1,5 @@
-AURA SDK Middleware manager.
+"""AURA SDK Middleware manager.
+"""
 
 class Manager:
     """Placeholder implementation for aura_sdk.middleware.manager."""

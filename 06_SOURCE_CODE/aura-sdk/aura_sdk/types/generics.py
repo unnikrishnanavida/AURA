@@ -1,4 +1,5 @@
-AURA SDK Types generics.
+"""AURA SDK Types generics.
+"""
 
 class Generics:
     """Placeholder implementation for aura_sdk.types.generics."""

@@ -1,3 +1,20 @@
-AURA SDK Transactions exceptions.
+"""AURA SDK Transactions exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class TransactionError(Exception):
+    """Base exception for aura_sdk.transactions."""
+
+
+class TransactionNotFoundError(TransactionError):
+    """Raised when a transactions resource is missing."""
+
+
+class TransactionValidationError(TransactionError):
+    """Raised when a transactions resource fails validation."""
+
+
+__all__ = [
+    "TransactionError",
+    "TransactionNotFoundError",
+    "TransactionValidationError",
+]

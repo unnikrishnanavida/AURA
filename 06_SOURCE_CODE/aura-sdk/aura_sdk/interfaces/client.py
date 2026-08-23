@@ -1,4 +1,5 @@
-AURA SDK Interfaces client.
+"""AURA SDK Interfaces client.
+"""
 
 class Client:
     """Placeholder implementation for aura_sdk.interfaces.client."""

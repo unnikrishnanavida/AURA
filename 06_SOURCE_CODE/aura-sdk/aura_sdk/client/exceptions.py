@@ -1,3 +1,20 @@
-AURA SDK Client exceptions.
+"""AURA SDK Client exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class ClientError(Exception):
+    """Base exception for aura_sdk.client."""
+
+
+class ClientNotFoundError(ClientError):
+    """Raised when a client resource is missing."""
+
+
+class ClientValidationError(ClientError):
+    """Raised when a client resource fails validation."""
+
+
+__all__ = [
+    "ClientError",
+    "ClientNotFoundError",
+    "ClientValidationError",
+]

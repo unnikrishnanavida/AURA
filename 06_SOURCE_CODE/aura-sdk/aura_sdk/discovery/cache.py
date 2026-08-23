@@ -1,4 +1,5 @@
-AURA SDK Discovery cache.
+"""AURA SDK Discovery cache.
+"""
 
 class Cache:
     """Placeholder implementation for aura_sdk.discovery.cache."""

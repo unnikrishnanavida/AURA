@@ -1,4 +1,5 @@
-AURA SDK Prediction quality_predictor.
+"""AURA SDK Prediction quality_predictor.
+"""
 
 class QualityPredictor:
     """Placeholder implementation for aura_sdk.prediction.quality_predictor."""

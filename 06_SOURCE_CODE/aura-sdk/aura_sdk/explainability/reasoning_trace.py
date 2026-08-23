@@ -1,4 +1,5 @@
-AURA SDK Explainability reasoning_trace.
+"""AURA SDK Explainability reasoning_trace.
+"""
 
 class ReasoningTrace:
     """Placeholder implementation for aura_sdk.explainability.reasoning_trace."""

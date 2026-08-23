@@ -1,4 +1,5 @@
-AURA SDK Builders session_builder.
+"""AURA SDK Builders session_builder.
+"""
 
 class SessionBuilder:
     """Placeholder implementation for aura_sdk.builders.session_builder."""

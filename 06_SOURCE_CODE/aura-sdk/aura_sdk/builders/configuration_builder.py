@@ -1,4 +1,5 @@
-AURA SDK Builders configuration_builder.
+"""AURA SDK Builders configuration_builder.
+"""
 
 class ConfigurationBuilder:
     """Placeholder implementation for aura_sdk.builders.configuration_builder."""

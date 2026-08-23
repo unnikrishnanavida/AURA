@@ -1,4 +1,5 @@
-AURA SDK Sandbox filesystem.
+"""AURA SDK Sandbox filesystem.
+"""
 
 class Filesystem:
     """Placeholder implementation for aura_sdk.sandbox.filesystem."""

@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_scheduler.
+"""AURA SDK Plugins plugin_scheduler.
+"""
 
 class PluginScheduler:
     """Placeholder implementation for aura_sdk.plugins.plugin_scheduler."""

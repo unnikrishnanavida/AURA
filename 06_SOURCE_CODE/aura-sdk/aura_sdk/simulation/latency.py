@@ -1,4 +1,5 @@
-AURA SDK Simulation latency.
+"""AURA SDK Simulation latency.
+"""
 
 class Latency:
     """Placeholder implementation for aura_sdk.simulation.latency."""

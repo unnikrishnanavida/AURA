@@ -1,4 +1,5 @@
-AURA SDK Utilities strings.
+"""AURA SDK Utilities strings.
+"""
 
 class Strings:
     """Placeholder implementation for aura_sdk.utilities.strings."""

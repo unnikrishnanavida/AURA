@@ -1,4 +1,5 @@
-AURA SDK Interfaces context.
+"""AURA SDK Interfaces context.
+"""
 
 class Context:
     """Placeholder implementation for aura_sdk.interfaces.context."""

@@ -1,4 +1,5 @@
-AURA SDK Observability dashboard.
+"""AURA SDK Observability dashboard.
+"""
 
 class Dashboard:
     """Placeholder implementation for aura_sdk.observability.dashboard."""

@@ -1,3 +1,20 @@
-AURA SDK Flight Recorder exceptions.
+"""AURA SDK Flight Recorder exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class FlightRecorderError(Exception):
+    """Base exception for aura_sdk.flight_recorder."""
+
+
+class FlightRecorderNotFoundError(FlightRecorderError):
+    """Raised when a flight recorder resource is missing."""
+
+
+class FlightRecorderValidationError(FlightRecorderError):
+    """Raised when a flight recorder resource fails validation."""
+
+
+__all__ = [
+    "FlightRecorderError",
+    "FlightRecorderNotFoundError",
+    "FlightRecorderValidationError",
+]

@@ -1,4 +1,5 @@
-AURA SDK Builders response_builder.
+"""AURA SDK Builders response_builder.
+"""
 
 class ResponseBuilder:
     """Placeholder implementation for aura_sdk.builders.response_builder."""

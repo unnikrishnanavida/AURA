@@ -1,3 +1,11 @@
-AURA SDK Adapters constants.
+"""AURA SDK Adapters constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_ADAPTERS_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.adapters"
+SUPPORTED_ADAPTERS = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_ADAPTERS_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_ADAPTERS",
+]

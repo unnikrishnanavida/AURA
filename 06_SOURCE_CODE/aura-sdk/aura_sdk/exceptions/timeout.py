@@ -1,4 +1,5 @@
-AURA SDK Exceptions timeout.
+"""AURA SDK Exceptions timeout.
+"""
 
 class Timeout:
     """Placeholder implementation for aura_sdk.exceptions.timeout."""

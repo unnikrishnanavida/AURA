@@ -1,4 +1,5 @@
-AURA SDK Client failover.
+"""AURA SDK Client failover.
+"""
 
 class Failover:
     """Placeholder implementation for aura_sdk.client.failover."""

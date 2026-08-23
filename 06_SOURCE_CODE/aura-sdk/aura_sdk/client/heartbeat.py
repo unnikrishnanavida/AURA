@@ -1,4 +1,5 @@
-AURA SDK Client heartbeat.
+"""AURA SDK Client heartbeat.
+"""
 
 class Heartbeat:
     """Placeholder implementation for aura_sdk.client.heartbeat."""

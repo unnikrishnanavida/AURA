@@ -1,4 +1,5 @@
-AURA SDK Models request.
+"""AURA SDK Models request.
+"""
 
 class Request:
     """Placeholder implementation for aura_sdk.models.request."""

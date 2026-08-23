@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_lifecycle.
+"""AURA SDK Plugins plugin_lifecycle.
+"""
 
 class PluginLifecycle:
     """Placeholder implementation for aura_sdk.plugins.plugin_lifecycle."""

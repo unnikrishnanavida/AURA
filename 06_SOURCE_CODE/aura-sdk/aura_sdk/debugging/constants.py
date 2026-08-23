@@ -1,3 +1,11 @@
-AURA SDK Debugging constants.
+"""AURA SDK Debugging constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_DEBUGGING_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.debugging"
+SUPPORTED_DEBUGGING = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_DEBUGGING_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_DEBUGGING",
+]

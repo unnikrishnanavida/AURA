@@ -1,4 +1,5 @@
-AURA SDK Optimization execution_optimizer.
+"""AURA SDK Optimization execution_optimizer.
+"""
 
 class ExecutionOptimizer:
     """Placeholder implementation for aura_sdk.optimization.execution_optimizer."""

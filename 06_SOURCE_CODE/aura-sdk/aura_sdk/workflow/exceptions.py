@@ -1,3 +1,20 @@
-AURA SDK Workflow exceptions.
+"""AURA SDK Workflow exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class WorkflowError(Exception):
+    """Base exception for aura_sdk.workflow."""
+
+
+class WorkflowNotFoundError(WorkflowError):
+    """Raised when a workflow resource is missing."""
+
+
+class WorkflowValidationError(WorkflowError):
+    """Raised when a workflow resource fails validation."""
+
+
+__all__ = [
+    "WorkflowError",
+    "WorkflowNotFoundError",
+    "WorkflowValidationError",
+]

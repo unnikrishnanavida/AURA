@@ -1,4 +1,5 @@
-AURA SDK Benchmarking stress.
+"""AURA SDK Benchmarking stress.
+"""
 
 class Stress:
     """Placeholder implementation for aura_sdk.benchmarking.stress."""

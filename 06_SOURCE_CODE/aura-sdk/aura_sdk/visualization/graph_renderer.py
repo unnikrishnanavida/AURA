@@ -1,4 +1,5 @@
-AURA SDK Visualization graph_renderer.
+"""AURA SDK Visualization graph_renderer.
+"""
 
 class GraphRenderer:
     """Placeholder implementation for aura_sdk.visualization.graph_renderer."""

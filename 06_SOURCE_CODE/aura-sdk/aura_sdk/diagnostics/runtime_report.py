@@ -1,4 +1,5 @@
-AURA SDK Diagnostics runtime_report.
+"""AURA SDK Diagnostics runtime_report.
+"""
 
 class RuntimeReport:
     """Placeholder implementation for aura_sdk.diagnostics.runtime_report."""

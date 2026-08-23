@@ -1,4 +1,5 @@
-AURA SDK Models graph.
+"""AURA SDK Models graph.
+"""
 
 class Graph:
     """Placeholder implementation for aura_sdk.models.graph."""

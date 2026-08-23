@@ -1,4 +1,5 @@
-AURA SDK Flight Recorder flight_recorder.
+"""AURA SDK Flight Recorder flight_recorder.
+"""
 
 class FlightRecorder:
     """Placeholder implementation for aura_sdk.flight_recorder.flight_recorder."""

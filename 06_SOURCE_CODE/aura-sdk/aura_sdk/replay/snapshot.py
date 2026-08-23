@@ -1,4 +1,5 @@
-AURA SDK Replay snapshot.
+"""AURA SDK Replay snapshot.
+"""
 
 class Snapshot:
     """Placeholder implementation for aura_sdk.replay.snapshot."""

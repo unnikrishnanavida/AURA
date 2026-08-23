@@ -1,3 +1,11 @@
-AURA SDK Visualization constants.
+"""AURA SDK Visualization constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_VISUALIZATION_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.visualization"
+SUPPORTED_VISUALIZATION = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_VISUALIZATION_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_VISUALIZATION",
+]

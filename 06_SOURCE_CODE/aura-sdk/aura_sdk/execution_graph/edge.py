@@ -1,4 +1,5 @@
-AURA SDK Execution Graph edge.
+"""AURA SDK Execution Graph edge.
+"""
 
 class Edge:
     """Placeholder implementation for aura_sdk.execution_graph.edge."""

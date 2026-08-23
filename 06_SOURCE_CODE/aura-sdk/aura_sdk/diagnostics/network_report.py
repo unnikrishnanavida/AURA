@@ -1,4 +1,5 @@
-AURA SDK Diagnostics network_report.
+"""AURA SDK Diagnostics network_report.
+"""
 
 class NetworkReport:
     """Placeholder implementation for aura_sdk.diagnostics.network_report."""

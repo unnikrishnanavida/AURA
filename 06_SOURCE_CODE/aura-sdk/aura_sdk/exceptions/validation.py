@@ -1,4 +1,5 @@
-AURA SDK Exceptions validation.
+"""AURA SDK Exceptions validation.
+"""
 
 class Validation:
     """Placeholder implementation for aura_sdk.exceptions.validation."""

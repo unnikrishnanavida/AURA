@@ -1,4 +1,5 @@
-AURA SDK Digital Twin twin.
+"""AURA SDK Digital Twin twin.
+"""
 
 class Twin:
     """Placeholder implementation for aura_sdk.digital_twin.twin."""

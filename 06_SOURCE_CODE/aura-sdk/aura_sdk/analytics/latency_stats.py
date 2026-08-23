@@ -1,4 +1,5 @@
-AURA SDK Analytics latency_stats.
+"""AURA SDK Analytics latency_stats.
+"""
 
 class LatencyStats:
     """Placeholder implementation for aura_sdk.analytics.latency_stats."""

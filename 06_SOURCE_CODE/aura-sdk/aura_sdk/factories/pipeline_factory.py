@@ -1,4 +1,5 @@
-AURA SDK Factories pipeline_factory.
+"""AURA SDK Factories pipeline_factory.
+"""
 
 class PipelineFactory:
     """Placeholder implementation for aura_sdk.factories.pipeline_factory."""

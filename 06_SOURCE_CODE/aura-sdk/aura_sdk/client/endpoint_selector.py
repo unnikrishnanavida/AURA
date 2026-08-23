@@ -1,4 +1,5 @@
-AURA SDK Client endpoint_selector.
+"""AURA SDK Client endpoint_selector.
+"""
 
 class EndpointSelector:
     """Placeholder implementation for aura_sdk.client.endpoint_selector."""

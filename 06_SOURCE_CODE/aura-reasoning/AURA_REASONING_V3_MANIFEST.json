@@ -1,0 +1,15 @@
+{
+  "source": "aura-reasoning(1).zip",
+  "python_files": 580,
+  "folders": 221,
+  "removed_duplicates": [
+    "aura_reasoning/abduction/hypothesis/hypothesis_space.py",
+    "aura_reasoning/abduction/hypothesis/hypothesis_ranker.py",
+    "aura_reasoning/inference/inference_controller.py"
+  ],
+  "claims_added": true,
+  "assumptions_added": true,
+  "forbidden_numbered_methods": false,
+  "syntax_validation": "PASS",
+  "core_tests": "PASS"
+}

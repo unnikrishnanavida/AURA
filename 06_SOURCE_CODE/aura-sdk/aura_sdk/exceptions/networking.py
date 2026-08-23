@@ -1,4 +1,5 @@
-AURA SDK Exceptions networking.
+"""AURA SDK Exceptions networking.
+"""
 
 class Networking:
     """Placeholder implementation for aura_sdk.exceptions.networking."""

@@ -1,4 +1,5 @@
-AURA SDK Recording pipeline_recorder.
+"""AURA SDK Recording pipeline_recorder.
+"""
 
 class PipelineRecorder:
     """Placeholder implementation for aura_sdk.recording.pipeline_recorder."""

@@ -1,3 +1,11 @@
-AURA SDK Flight Recorder constants.
+"""AURA SDK Flight Recorder constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_FLIGHT_RECORDER_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.flight_recorder"
+SUPPORTED_FLIGHT_RECORDER = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_FLIGHT_RECORDER_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_FLIGHT_RECORDER",
+]

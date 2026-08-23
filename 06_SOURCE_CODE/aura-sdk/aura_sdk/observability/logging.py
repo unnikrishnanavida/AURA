@@ -1,4 +1,5 @@
-AURA SDK Observability logging.
+"""AURA SDK Observability logging.
+"""
 
 class Logging:
     """Placeholder implementation for aura_sdk.observability.logging."""

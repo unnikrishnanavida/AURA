@@ -1,4 +1,5 @@
-AURA SDK Visualization charts.
+"""AURA SDK Visualization charts.
+"""
 
 class Charts:
     """Placeholder implementation for aura_sdk.visualization.charts."""

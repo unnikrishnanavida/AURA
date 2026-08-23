@@ -1,4 +1,5 @@
-AURA SDK Sandbox networking.
+"""AURA SDK Sandbox networking.
+"""
 
 class Networking:
     """Placeholder implementation for aura_sdk.sandbox.networking."""

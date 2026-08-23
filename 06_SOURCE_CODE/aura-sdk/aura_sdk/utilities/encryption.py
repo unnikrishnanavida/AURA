@@ -1,4 +1,5 @@
-AURA SDK Utilities encryption.
+"""AURA SDK Utilities encryption.
+"""
 
 class Encryption:
     """Placeholder implementation for aura_sdk.utilities.encryption."""

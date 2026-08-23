@@ -1,4 +1,5 @@
-AURA SDK Marketplace uploader.
+"""AURA SDK Marketplace uploader.
+"""
 
 class Uploader:
     """Placeholder implementation for aura_sdk.marketplace.uploader."""

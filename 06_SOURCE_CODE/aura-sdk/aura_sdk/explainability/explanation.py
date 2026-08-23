@@ -1,4 +1,5 @@
-AURA SDK Explainability explanation.
+"""AURA SDK Explainability explanation.
+"""
 
 class Explanation:
     """Placeholder implementation for aura_sdk.explainability.explanation."""

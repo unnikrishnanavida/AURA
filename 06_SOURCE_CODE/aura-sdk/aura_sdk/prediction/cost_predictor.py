@@ -1,4 +1,5 @@
-AURA SDK Prediction cost_predictor.
+"""AURA SDK Prediction cost_predictor.
+"""
 
 class CostPredictor:
     """Placeholder implementation for aura_sdk.prediction.cost_predictor."""

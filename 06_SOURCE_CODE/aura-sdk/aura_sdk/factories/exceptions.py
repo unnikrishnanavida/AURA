@@ -1,3 +1,20 @@
-AURA SDK Factories exceptions.
+"""AURA SDK Factories exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class FactorieError(Exception):
+    """Base exception for aura_sdk.factories."""
+
+
+class FactorieNotFoundError(FactorieError):
+    """Raised when a factories resource is missing."""
+
+
+class FactorieValidationError(FactorieError):
+    """Raised when a factories resource fails validation."""
+
+
+__all__ = [
+    "FactorieError",
+    "FactorieNotFoundError",
+    "FactorieValidationError",
+]

@@ -1,4 +1,5 @@
-AURA SDK Observability metrics.
+"""AURA SDK Observability metrics.
+"""
 
 class Metrics:
     """Placeholder implementation for aura_sdk.observability.metrics."""

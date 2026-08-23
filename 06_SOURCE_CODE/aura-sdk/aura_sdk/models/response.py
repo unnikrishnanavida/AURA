@@ -1,4 +1,5 @@
-AURA SDK Models response.
+"""AURA SDK Models response.
+"""
 
 class Response:
     """Placeholder implementation for aura_sdk.models.response."""

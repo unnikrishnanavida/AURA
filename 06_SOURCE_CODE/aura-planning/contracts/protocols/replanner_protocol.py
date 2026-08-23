@@ -1,0 +1,3 @@
+from typing import Protocol
+class ReplannerProtocol(Protocol):
+    def replan(self,request): ...

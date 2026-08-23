@@ -1,4 +1,5 @@
-AURA SDK Compatibility compatibility_report.
+"""AURA SDK Compatibility compatibility_report.
+"""
 
 class CompatibilityReport:
     """Placeholder implementation for aura_sdk.compatibility.compatibility_report."""

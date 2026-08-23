@@ -1,4 +1,5 @@
-AURA SDK Exceptions serialization.
+"""AURA SDK Exceptions serialization.
+"""
 
 class Serialization:
     """Placeholder implementation for aura_sdk.exceptions.serialization."""

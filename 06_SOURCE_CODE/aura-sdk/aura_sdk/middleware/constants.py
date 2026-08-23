@@ -1,3 +1,11 @@
-AURA SDK Middleware constants.
+"""AURA SDK Middleware constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_MIDDLEWARE_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.middleware"
+SUPPORTED_MIDDLEWARE = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_MIDDLEWARE_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_MIDDLEWARE",
+]

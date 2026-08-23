@@ -1,4 +1,5 @@
-AURA SDK Routing capability_router.
+"""AURA SDK Routing capability_router.
+"""
 
 class CapabilityRouter:
     """Placeholder implementation for aura_sdk.routing.capability_router."""

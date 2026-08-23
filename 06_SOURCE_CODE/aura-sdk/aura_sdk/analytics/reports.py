@@ -1,4 +1,5 @@
-AURA SDK Analytics reports.
+"""AURA SDK Analytics reports.
+"""
 
 class Reports:
     """Placeholder implementation for aura_sdk.analytics.reports."""

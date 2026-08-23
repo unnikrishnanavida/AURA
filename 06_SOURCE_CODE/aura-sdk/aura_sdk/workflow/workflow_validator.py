@@ -1,4 +1,5 @@
-AURA SDK Workflow workflow_validator.
+"""AURA SDK Workflow workflow_validator.
+"""
 
 class WorkflowValidator:
     """Placeholder implementation for aura_sdk.workflow.workflow_validator."""

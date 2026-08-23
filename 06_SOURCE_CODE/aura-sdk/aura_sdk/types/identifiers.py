@@ -1,4 +1,5 @@
-AURA SDK Types identifiers.
+"""AURA SDK Types identifiers.
+"""
 
 class Identifiers:
     """Placeholder implementation for aura_sdk.types.identifiers."""

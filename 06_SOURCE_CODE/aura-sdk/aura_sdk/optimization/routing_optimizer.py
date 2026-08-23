@@ -1,4 +1,5 @@
-AURA SDK Optimization routing_optimizer.
+"""AURA SDK Optimization routing_optimizer.
+"""
 
 class RoutingOptimizer:
     """Placeholder implementation for aura_sdk.optimization.routing_optimizer."""

@@ -1,4 +1,5 @@
-AURA SDK Providers provider_registry.
+"""AURA SDK Providers provider_registry.
+"""
 
 class ProviderRegistry:
     """Placeholder implementation for aura_sdk.providers.provider_registry."""

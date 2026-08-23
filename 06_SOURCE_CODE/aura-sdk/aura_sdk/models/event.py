@@ -1,4 +1,5 @@
-AURA SDK Models event.
+"""AURA SDK Models event.
+"""
 
 class Event:
     """Placeholder implementation for aura_sdk.models.event."""

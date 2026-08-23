@@ -1,4 +1,5 @@
-AURA SDK Benchmarking benchmark.
+"""AURA SDK Benchmarking benchmark.
+"""
 
 class Benchmark:
     """Placeholder implementation for aura_sdk.benchmarking.benchmark."""

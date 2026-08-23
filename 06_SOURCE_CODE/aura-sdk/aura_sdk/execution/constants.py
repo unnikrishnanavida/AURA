@@ -1,3 +1,11 @@
-AURA SDK Execution constants.
+"""AURA SDK Execution constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_EXECUTION_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.execution"
+SUPPORTED_EXECUTION = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_EXECUTION_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_EXECUTION",
+]

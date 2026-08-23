@@ -1,4 +1,5 @@
-AURA SDK Digital Twin snapshots.
+"""AURA SDK Digital Twin snapshots.
+"""
 
 class Snapshots:
     """Placeholder implementation for aura_sdk.digital_twin.snapshots."""

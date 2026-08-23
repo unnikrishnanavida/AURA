@@ -1,4 +1,5 @@
-AURA SDK Analytics cost_stats.
+"""AURA SDK Analytics cost_stats.
+"""
 
 class CostStats:
     """Placeholder implementation for aura_sdk.analytics.cost_stats."""

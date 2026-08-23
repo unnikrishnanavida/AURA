@@ -1,4 +1,5 @@
-AURA SDK Discovery plugin_discovery.
+"""AURA SDK Discovery plugin_discovery.
+"""
 
 class PluginDiscovery:
     """Placeholder implementation for aura_sdk.discovery.plugin_discovery."""

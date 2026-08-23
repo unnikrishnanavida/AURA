@@ -1,4 +1,5 @@
-AURA SDK Flight Recorder prompt_log.
+"""AURA SDK Flight Recorder prompt_log.
+"""
 
 class PromptLog:
     """Placeholder implementation for aura_sdk.flight_recorder.prompt_log."""

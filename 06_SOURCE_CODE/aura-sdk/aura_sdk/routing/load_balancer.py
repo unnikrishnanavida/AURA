@@ -1,4 +1,5 @@
-AURA SDK Routing load_balancer.
+"""AURA SDK Routing load_balancer.
+"""
 
 class LoadBalancer:
     """Placeholder implementation for aura_sdk.routing.load_balancer."""

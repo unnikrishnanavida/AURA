@@ -1,4 +1,5 @@
-AURA SDK Capability manifest.
+"""AURA SDK Capability manifest.
+"""
 
 class Manifest:
     """Placeholder implementation for aura_sdk.capability.manifest."""

@@ -1,4 +1,5 @@
-AURA SDK Middleware executor.
+"""AURA SDK Middleware executor.
+"""
 
 class Executor:
     """Placeholder implementation for aura_sdk.middleware.executor."""

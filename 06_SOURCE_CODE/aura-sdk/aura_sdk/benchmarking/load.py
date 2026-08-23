@@ -1,4 +1,5 @@
-AURA SDK Benchmarking load.
+"""AURA SDK Benchmarking load.
+"""
 
 class Load:
     """Placeholder implementation for aura_sdk.benchmarking.load."""

@@ -1,3 +1,20 @@
-AURA SDK Visualization exceptions.
+"""AURA SDK Visualization exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class VisualizationError(Exception):
+    """Base exception for aura_sdk.visualization."""
+
+
+class VisualizationNotFoundError(VisualizationError):
+    """Raised when a visualization resource is missing."""
+
+
+class VisualizationValidationError(VisualizationError):
+    """Raised when a visualization resource fails validation."""
+
+
+__all__ = [
+    "VisualizationError",
+    "VisualizationNotFoundError",
+    "VisualizationValidationError",
+]

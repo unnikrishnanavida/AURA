@@ -1,4 +1,5 @@
-AURA SDK Models session.
+"""AURA SDK Models session.
+"""
 
 class Session:
     """Placeholder implementation for aura_sdk.models.session."""

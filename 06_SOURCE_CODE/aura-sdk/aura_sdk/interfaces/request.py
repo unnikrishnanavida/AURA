@@ -1,4 +1,5 @@
-AURA SDK Interfaces request.
+"""AURA SDK Interfaces request.
+"""
 
 class Request:
     """Placeholder implementation for aura_sdk.interfaces.request."""

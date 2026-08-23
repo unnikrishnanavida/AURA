@@ -1,4 +1,5 @@
-AURA SDK Recording exporter.
+"""AURA SDK Recording exporter.
+"""
 
 class Exporter:
     """Placeholder implementation for aura_sdk.recording.exporter."""

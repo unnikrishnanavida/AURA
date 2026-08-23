@@ -1,4 +1,5 @@
-AURA SDK Debugging runtime_view.
+"""AURA SDK Debugging runtime_view.
+"""
 
 class RuntimeView:
     """Placeholder implementation for aura_sdk.debugging.runtime_view."""

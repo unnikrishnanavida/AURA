@@ -1,4 +1,5 @@
-AURA SDK Middleware request.
+"""AURA SDK Middleware request.
+"""
 
 class Request:
     """Placeholder implementation for aura_sdk.middleware.request."""

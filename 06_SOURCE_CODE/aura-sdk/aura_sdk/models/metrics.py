@@ -1,4 +1,5 @@
-AURA SDK Models metrics.
+"""AURA SDK Models metrics.
+"""
 
 class Metrics:
     """Placeholder implementation for aura_sdk.models.metrics."""

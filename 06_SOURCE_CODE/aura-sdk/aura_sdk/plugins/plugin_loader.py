@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_loader.
+"""AURA SDK Plugins plugin_loader.
+"""
 
 class PluginLoader:
     """Placeholder implementation for aura_sdk.plugins.plugin_loader."""

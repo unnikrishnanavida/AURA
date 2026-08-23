@@ -1,4 +1,5 @@
-AURA SDK Client client_configuration.
+"""AURA SDK Client client_configuration.
+"""
 
 class ClientConfiguration:
     """Placeholder implementation for aura_sdk.client.client_configuration."""

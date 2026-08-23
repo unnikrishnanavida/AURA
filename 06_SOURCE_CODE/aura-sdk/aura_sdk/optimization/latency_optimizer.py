@@ -1,4 +1,5 @@
-AURA SDK Optimization latency_optimizer.
+"""AURA SDK Optimization latency_optimizer.
+"""
 
 class LatencyOptimizer:
     """Placeholder implementation for aura_sdk.optimization.latency_optimizer."""

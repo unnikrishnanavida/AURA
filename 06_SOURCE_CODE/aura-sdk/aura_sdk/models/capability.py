@@ -1,4 +1,5 @@
-AURA SDK Models capability.
+"""AURA SDK Models capability.
+"""
 
 class Capability:
     """Placeholder implementation for aura_sdk.models.capability."""

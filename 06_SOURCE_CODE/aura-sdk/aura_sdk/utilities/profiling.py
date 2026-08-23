@@ -1,4 +1,5 @@
-AURA SDK Utilities profiling.
+"""AURA SDK Utilities profiling.
+"""
 
 class Profiling:
     """Placeholder implementation for aura_sdk.utilities.profiling."""

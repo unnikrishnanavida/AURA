@@ -1,4 +1,5 @@
-AURA SDK Exceptions configuration.
+"""AURA SDK Exceptions configuration.
+"""
 
 class Configuration:
     """Placeholder implementation for aura_sdk.exceptions.configuration."""

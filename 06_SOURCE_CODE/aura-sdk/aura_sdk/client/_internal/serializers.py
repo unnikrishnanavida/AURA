@@ -1,4 +1,5 @@
-AURA SDK Client/ Internal serializers.
+"""AURA SDK Client/ Internal serializers.
+"""
 
 class Serializers:
     """Placeholder implementation for aura_sdk.client/_internal.serializers."""

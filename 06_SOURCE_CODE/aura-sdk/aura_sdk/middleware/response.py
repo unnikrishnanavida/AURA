@@ -1,4 +1,5 @@
-AURA SDK Middleware response.
+"""AURA SDK Middleware response.
+"""
 
 class Response:
     """Placeholder implementation for aura_sdk.middleware.response."""

@@ -1,4 +1,5 @@
-AURA SDK Marketplace verification.
+"""AURA SDK Marketplace verification.
+"""
 
 class Verification:
     """Placeholder implementation for aura_sdk.marketplace.verification."""

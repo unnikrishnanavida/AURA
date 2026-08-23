@@ -1,4 +1,5 @@
-AURA SDK Utilities hashing.
+"""AURA SDK Utilities hashing.
+"""
 
 class Hashing:
     """Placeholder implementation for aura_sdk.utilities.hashing."""

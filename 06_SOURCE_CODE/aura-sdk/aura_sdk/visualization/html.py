@@ -1,4 +1,5 @@
-AURA SDK Visualization html.
+"""AURA SDK Visualization html.
+"""
 
 class Html:
     """Placeholder implementation for aura_sdk.visualization.html."""

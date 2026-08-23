@@ -1,4 +1,5 @@
-AURA SDK Models report.
+"""AURA SDK Models report.
+"""
 
 class Report:
     """Placeholder implementation for aura_sdk.models.report."""

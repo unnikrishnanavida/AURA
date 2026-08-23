@@ -1,3 +1,11 @@
-AURA SDK Orchestration constants.
+"""AURA SDK Orchestration constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_ORCHESTRATION_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.orchestration"
+SUPPORTED_ORCHESTRATION = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_ORCHESTRATION_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_ORCHESTRATION",
+]

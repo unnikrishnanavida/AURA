@@ -1,3 +1,20 @@
-AURA SDK Middleware exceptions.
+"""AURA SDK Middleware exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class MiddlewareError(Exception):
+    """Base exception for aura_sdk.middleware."""
+
+
+class MiddlewareNotFoundError(MiddlewareError):
+    """Raised when a middleware resource is missing."""
+
+
+class MiddlewareValidationError(MiddlewareError):
+    """Raised when a middleware resource fails validation."""
+
+
+__all__ = [
+    "MiddlewareError",
+    "MiddlewareNotFoundError",
+    "MiddlewareValidationError",
+]

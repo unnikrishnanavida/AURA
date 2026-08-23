@@ -1,4 +1,5 @@
-AURA SDK Optimization prompt_optimizer.
+"""AURA SDK Optimization prompt_optimizer.
+"""
 
 class PromptOptimizer:
     """Placeholder implementation for aura_sdk.optimization.prompt_optimizer."""

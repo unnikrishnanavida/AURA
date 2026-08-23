@@ -1,3 +1,20 @@
-AURA SDK Capability exceptions.
+"""AURA SDK Capability exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class CapabilityError(Exception):
+    """Base exception for aura_sdk.capability."""
+
+
+class CapabilityNotFoundError(CapabilityError):
+    """Raised when a capability resource is missing."""
+
+
+class CapabilityValidationError(CapabilityError):
+    """Raised when a capability resource fails validation."""
+
+
+__all__ = [
+    "CapabilityError",
+    "CapabilityNotFoundError",
+    "CapabilityValidationError",
+]

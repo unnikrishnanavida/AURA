@@ -1,4 +1,5 @@
-AURA SDK Observability events.
+"""AURA SDK Observability events.
+"""
 
 class Events:
     """Placeholder implementation for aura_sdk.observability.events."""

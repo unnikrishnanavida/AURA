@@ -1,4 +1,5 @@
-AURA SDK Explainability decision_tree.
+"""AURA SDK Explainability decision_tree.
+"""
 
 class DecisionTree:
     """Placeholder implementation for aura_sdk.explainability.decision_tree."""

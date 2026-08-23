@@ -1,4 +1,5 @@
-AURA SDK Marketplace package_metadata.
+"""AURA SDK Marketplace package_metadata.
+"""
 
 class PackageMetadata:
     """Placeholder implementation for aura_sdk.marketplace.package_metadata."""

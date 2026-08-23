@@ -1,4 +1,5 @@
-AURA SDK Transactions transaction.
+"""AURA SDK Transactions transaction.
+"""
 
 class Transaction:
     """Placeholder implementation for aura_sdk.transactions.transaction."""

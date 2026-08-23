@@ -1,3 +1,20 @@
-AURA SDK Execution Graph exceptions.
+"""AURA SDK Execution Graph exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class ExecutionGraphError(Exception):
+    """Base exception for aura_sdk.execution_graph."""
+
+
+class ExecutionGraphNotFoundError(ExecutionGraphError):
+    """Raised when a execution graph resource is missing."""
+
+
+class ExecutionGraphValidationError(ExecutionGraphError):
+    """Raised when a execution graph resource fails validation."""
+
+
+__all__ = [
+    "ExecutionGraphError",
+    "ExecutionGraphNotFoundError",
+    "ExecutionGraphValidationError",
+]

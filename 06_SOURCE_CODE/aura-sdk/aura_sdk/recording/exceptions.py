@@ -1,3 +1,20 @@
-AURA SDK Recording exceptions.
+"""AURA SDK Recording exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class RecordingError(Exception):
+    """Base exception for aura_sdk.recording."""
+
+
+class RecordingNotFoundError(RecordingError):
+    """Raised when a recording resource is missing."""
+
+
+class RecordingValidationError(RecordingError):
+    """Raised when a recording resource fails validation."""
+
+
+__all__ = [
+    "RecordingError",
+    "RecordingNotFoundError",
+    "RecordingValidationError",
+]

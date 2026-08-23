@@ -1,4 +1,5 @@
-AURA SDK Execution execution_result.
+"""AURA SDK Execution execution_result.
+"""
 
 class ExecutionResult:
     """Placeholder implementation for aura_sdk.execution.execution_result."""

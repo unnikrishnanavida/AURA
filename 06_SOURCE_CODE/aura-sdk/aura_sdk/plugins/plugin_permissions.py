@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_permissions.
+"""AURA SDK Plugins plugin_permissions.
+"""
 
 class PluginPermissions:
     """Placeholder implementation for aura_sdk.plugins.plugin_permissions."""

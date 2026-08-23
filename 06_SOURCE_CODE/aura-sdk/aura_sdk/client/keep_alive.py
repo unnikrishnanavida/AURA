@@ -1,4 +1,5 @@
-AURA SDK Client keep_alive.
+"""AURA SDK Client keep_alive.
+"""
 
 class KeepAlive:
     """Placeholder implementation for aura_sdk.client.keep_alive."""

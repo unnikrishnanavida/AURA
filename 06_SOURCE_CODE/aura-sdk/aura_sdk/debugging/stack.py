@@ -1,4 +1,5 @@
-AURA SDK Debugging stack.
+"""AURA SDK Debugging stack.
+"""
 
 class Stack:
     """Placeholder implementation for aura_sdk.debugging.stack."""

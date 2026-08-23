@@ -1,3 +1,20 @@
-AURA SDK Digital Twin exceptions.
+"""AURA SDK Digital Twin exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class DigitalTwinError(Exception):
+    """Base exception for aura_sdk.digital_twin."""
+
+
+class DigitalTwinNotFoundError(DigitalTwinError):
+    """Raised when a digital twin resource is missing."""
+
+
+class DigitalTwinValidationError(DigitalTwinError):
+    """Raised when a digital twin resource fails validation."""
+
+
+__all__ = [
+    "DigitalTwinError",
+    "DigitalTwinNotFoundError",
+    "DigitalTwinValidationError",
+]

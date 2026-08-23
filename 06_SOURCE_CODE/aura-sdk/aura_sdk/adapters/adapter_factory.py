@@ -1,4 +1,5 @@
-AURA SDK Adapters adapter_factory.
+"""AURA SDK Adapters adapter_factory.
+"""
 
 class AdapterFactory:
     """Placeholder implementation for aura_sdk.adapters.adapter_factory."""

@@ -1,4 +1,5 @@
-AURA SDK Execution execution_context.
+"""AURA SDK Execution execution_context.
+"""
 
 class ExecutionContext:
     """Placeholder implementation for aura_sdk.execution.execution_context."""

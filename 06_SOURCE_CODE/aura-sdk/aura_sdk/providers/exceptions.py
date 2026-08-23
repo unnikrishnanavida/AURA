@@ -1,3 +1,20 @@
-AURA SDK Providers exceptions.
+"""AURA SDK Providers exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class ProviderError(Exception):
+    """Base exception for aura_sdk.providers."""
+
+
+class ProviderNotFoundError(ProviderError):
+    """Raised when a providers resource is missing."""
+
+
+class ProviderValidationError(ProviderError):
+    """Raised when a providers resource fails validation."""
+
+
+__all__ = [
+    "ProviderError",
+    "ProviderNotFoundError",
+    "ProviderValidationError",
+]

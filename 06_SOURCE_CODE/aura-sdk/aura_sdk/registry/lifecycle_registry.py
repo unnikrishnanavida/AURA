@@ -1,4 +1,5 @@
-AURA SDK Registry lifecycle_registry.
+"""AURA SDK Registry lifecycle_registry.
+"""
 
 class LifecycleRegistry:
     """Placeholder implementation for aura_sdk.registry.lifecycle_registry."""

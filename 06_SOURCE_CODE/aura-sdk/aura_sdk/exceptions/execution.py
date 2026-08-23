@@ -1,4 +1,5 @@
-AURA SDK Exceptions execution.
+"""AURA SDK Exceptions execution.
+"""
 
 class Execution:
     """Placeholder implementation for aura_sdk.exceptions.execution."""

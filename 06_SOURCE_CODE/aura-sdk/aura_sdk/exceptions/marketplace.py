@@ -1,4 +1,5 @@
-AURA SDK Exceptions marketplace.
+"""AURA SDK Exceptions marketplace.
+"""
 
 class Marketplace:
     """Placeholder implementation for aura_sdk.exceptions.marketplace."""

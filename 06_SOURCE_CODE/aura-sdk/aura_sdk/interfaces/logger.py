@@ -1,4 +1,5 @@
-AURA SDK Interfaces logger.
+"""AURA SDK Interfaces logger.
+"""
 
 class Logger:
     """Placeholder implementation for aura_sdk.interfaces.logger."""

@@ -1,4 +1,5 @@
-AURA SDK Marketplace dependency_resolver.
+"""AURA SDK Marketplace dependency_resolver.
+"""
 
 class DependencyResolver:
     """Placeholder implementation for aura_sdk.marketplace.dependency_resolver."""

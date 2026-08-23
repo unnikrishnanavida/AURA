@@ -1,4 +1,5 @@
-AURA SDK Replay comparator.
+"""AURA SDK Replay comparator.
+"""
 
 class Comparator:
     """Placeholder implementation for aura_sdk.replay.comparator."""

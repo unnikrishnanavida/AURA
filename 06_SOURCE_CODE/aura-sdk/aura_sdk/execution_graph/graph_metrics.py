@@ -1,4 +1,5 @@
-AURA SDK Execution Graph graph_metrics.
+"""AURA SDK Execution Graph graph_metrics.
+"""
 
 class GraphMetrics:
     """Placeholder implementation for aura_sdk.execution_graph.graph_metrics."""

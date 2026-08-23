@@ -1,4 +1,5 @@
-AURA SDK Analytics usage.
+"""AURA SDK Analytics usage.
+"""
 
 class Usage:
     """Placeholder implementation for aura_sdk.analytics.usage."""

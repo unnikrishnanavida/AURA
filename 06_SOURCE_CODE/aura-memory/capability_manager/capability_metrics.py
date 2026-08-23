@@ -1,0 +1,42 @@
+AURA Memory capability_manager utilities for capability_metrics.
+
+from __future__ import annotations
+import json
+import logging
+import time
+import uuid
+from typing import Any, Dict
+
+logger = logging.getLogger(__name__)
+
+
+def serialize_CAPABILITY_METRICS(payload: Dict[str, Any]) -> str:
+    '''Serialize payload to a compact JSON string.'''
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+def deserialize_CAPABILITY_METRICS(payload: str) -> Dict[str, Any]:
+    '''Deserialize payload from JSON.'''
+    return json.loads(payload)
+
+
+def create_default_CAPABILITY_METRICS() -> Dict[str, Any]:
+    '''Create a default payload object.'''
+    return {"id": str(uuid.uuid4()), "name": "default-CAPABILITY_METRICS", "created_at": time.time()}
+
+
+def normalize_CAPABILITY_METRICS(payload: Dict[str, Any]) -> Dict[str, Any]:
+    '''Normalize a payload into a consistent shape.'''
+    payload = payload.copy()
+    payload.setdefault("id", str(uuid.uuid4()))
+    payload.setdefault("name", "default-CAPABILITY_METRICS")
+    payload.setdefault("created_at", time.time())
+    return payload
+
+
+__all__ = [
+    "serialize_CAPABILITY_METRICS",
+    "deserialize_CAPABILITY_METRICS",
+    "create_default_CAPABILITY_METRICS",
+    "normalize_CAPABILITY_METRICS",
+]

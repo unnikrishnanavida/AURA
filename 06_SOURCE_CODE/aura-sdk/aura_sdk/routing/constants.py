@@ -1,3 +1,11 @@
-AURA SDK Routing constants.
+"""AURA SDK Routing constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_ROUTING_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.routing"
+SUPPORTED_ROUTING = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_ROUTING_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_ROUTING",
+]

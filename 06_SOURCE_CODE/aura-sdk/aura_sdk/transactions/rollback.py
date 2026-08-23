@@ -1,4 +1,5 @@
-AURA SDK Transactions rollback.
+"""AURA SDK Transactions rollback.
+"""
 
 class Rollback:
     """Placeholder implementation for aura_sdk.transactions.rollback."""

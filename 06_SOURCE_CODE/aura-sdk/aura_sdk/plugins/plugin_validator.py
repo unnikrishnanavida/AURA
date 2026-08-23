@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_validator.
+"""AURA SDK Plugins plugin_validator.
+"""
 
 class PluginValidator:
     """Placeholder implementation for aura_sdk.plugins.plugin_validator."""

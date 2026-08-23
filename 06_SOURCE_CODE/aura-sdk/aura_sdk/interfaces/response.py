@@ -1,4 +1,5 @@
-AURA SDK Interfaces response.
+"""AURA SDK Interfaces response.
+"""
 
 class Response:
     """Placeholder implementation for aura_sdk.interfaces.response."""

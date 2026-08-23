@@ -1,3 +1,20 @@
-AURA SDK Discovery exceptions.
+"""AURA SDK Discovery exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class DiscoveryError(Exception):
+    """Base exception for aura_sdk.discovery."""
+
+
+class DiscoveryNotFoundError(DiscoveryError):
+    """Raised when a discovery resource is missing."""
+
+
+class DiscoveryValidationError(DiscoveryError):
+    """Raised when a discovery resource fails validation."""
+
+
+__all__ = [
+    "DiscoveryError",
+    "DiscoveryNotFoundError",
+    "DiscoveryValidationError",
+]

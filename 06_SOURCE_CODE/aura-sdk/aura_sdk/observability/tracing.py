@@ -1,4 +1,5 @@
-AURA SDK Observability tracing.
+"""AURA SDK Observability tracing.
+"""
 
 class Tracing:
     """Placeholder implementation for aura_sdk.observability.tracing."""

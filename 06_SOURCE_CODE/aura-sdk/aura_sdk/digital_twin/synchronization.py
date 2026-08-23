@@ -1,4 +1,5 @@
-AURA SDK Digital Twin synchronization.
+"""AURA SDK Digital Twin synchronization.
+"""
 
 class Synchronization:
     """Placeholder implementation for aura_sdk.digital_twin.synchronization."""

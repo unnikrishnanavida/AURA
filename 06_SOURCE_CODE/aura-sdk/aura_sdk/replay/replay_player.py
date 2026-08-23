@@ -1,4 +1,5 @@
-AURA SDK Replay replay_player.
+"""AURA SDK Replay replay_player.
+"""
 
 class ReplayPlayer:
     """Placeholder implementation for aura_sdk.replay.replay_player."""

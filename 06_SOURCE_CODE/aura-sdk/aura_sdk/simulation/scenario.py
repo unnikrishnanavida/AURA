@@ -1,4 +1,5 @@
-AURA SDK Simulation scenario.
+"""AURA SDK Simulation scenario.
+"""
 
 class Scenario:
     """Placeholder implementation for aura_sdk.simulation.scenario."""

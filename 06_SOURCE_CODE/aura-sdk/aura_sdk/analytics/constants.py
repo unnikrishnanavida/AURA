@@ -1,3 +1,11 @@
-AURA SDK Analytics constants.
+"""AURA SDK Analytics constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_ANALYTICS_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.analytics"
+SUPPORTED_ANALYTICS = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_ANALYTICS_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_ANALYTICS",
+]

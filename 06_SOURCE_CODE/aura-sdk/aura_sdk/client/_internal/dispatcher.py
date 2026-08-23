@@ -1,4 +1,5 @@
-AURA SDK Client/ Internal dispatcher.
+"""AURA SDK Client/ Internal dispatcher.
+"""
 
 class Dispatcher:
     """Placeholder implementation for aura_sdk.client/_internal.dispatcher."""

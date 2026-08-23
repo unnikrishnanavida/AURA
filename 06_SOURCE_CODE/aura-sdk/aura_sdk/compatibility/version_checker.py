@@ -1,4 +1,5 @@
-AURA SDK Compatibility version_checker.
+"""AURA SDK Compatibility version_checker.
+"""
 
 class VersionChecker:
     """Placeholder implementation for aura_sdk.compatibility.version_checker."""

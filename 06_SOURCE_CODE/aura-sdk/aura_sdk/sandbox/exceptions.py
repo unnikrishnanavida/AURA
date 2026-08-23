@@ -1,3 +1,20 @@
-AURA SDK Sandbox exceptions.
+"""AURA SDK Sandbox exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class SandboxError(Exception):
+    """Base exception for aura_sdk.sandbox."""
+
+
+class SandboxNotFoundError(SandboxError):
+    """Raised when a sandbox resource is missing."""
+
+
+class SandboxValidationError(SandboxError):
+    """Raised when a sandbox resource fails validation."""
+
+
+__all__ = [
+    "SandboxError",
+    "SandboxNotFoundError",
+    "SandboxValidationError",
+]

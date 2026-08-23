@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_manifest.
+"""AURA SDK Plugins plugin_manifest.
+"""
 
 class PluginManifest:
     """Placeholder implementation for aura_sdk.plugins.plugin_manifest."""

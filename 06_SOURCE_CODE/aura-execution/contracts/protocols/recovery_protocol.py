@@ -1,0 +1,3 @@
+from typing import Protocol
+class RecoveryProtocol(Protocol):
+    def recover(self, failure): ...

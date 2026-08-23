@@ -1,4 +1,5 @@
-AURA SDK Debugging variables.
+"""AURA SDK Debugging variables.
+"""
 
 class Variables:
     """Placeholder implementation for aura_sdk.debugging.variables."""

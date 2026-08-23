@@ -1,4 +1,5 @@
-AURA SDK Compatibility migration.
+"""AURA SDK Compatibility migration.
+"""
 
 class Migration:
     """Placeholder implementation for aura_sdk.compatibility.migration."""

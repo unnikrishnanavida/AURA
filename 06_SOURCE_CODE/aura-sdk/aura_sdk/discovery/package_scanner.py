@@ -1,4 +1,5 @@
-AURA SDK Discovery package_scanner.
+"""AURA SDK Discovery package_scanner.
+"""
 
 class PackageScanner:
     """Placeholder implementation for aura_sdk.discovery.package_scanner."""

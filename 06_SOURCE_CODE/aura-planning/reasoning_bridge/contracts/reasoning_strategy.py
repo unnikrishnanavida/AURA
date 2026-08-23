@@ -1,0 +1,6 @@
+from abc import ABC, abstractmethod
+class ReasoningStrategy(ABC):
+    @abstractmethod
+    def supports(self, request): ...
+    @abstractmethod
+    def reason(self, request): ...

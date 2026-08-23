@@ -1,4 +1,5 @@
-AURA SDK Marketplace installer.
+"""AURA SDK Marketplace installer.
+"""
 
 class Installer:
     """Placeholder implementation for aura_sdk.marketplace.installer."""

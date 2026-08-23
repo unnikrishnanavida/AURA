@@ -1,4 +1,5 @@
-AURA SDK Discovery metadata_loader.
+"""AURA SDK Discovery metadata_loader.
+"""
 
 class MetadataLoader:
     """Placeholder implementation for aura_sdk.discovery.metadata_loader."""

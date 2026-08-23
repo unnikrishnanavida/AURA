@@ -1,4 +1,5 @@
-AURA SDK Recording graph_recorder.
+"""AURA SDK Recording graph_recorder.
+"""
 
 class GraphRecorder:
     """Placeholder implementation for aura_sdk.recording.graph_recorder."""

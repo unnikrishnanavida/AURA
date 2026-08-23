@@ -1,4 +1,5 @@
-AURA SDK Observability monitoring.
+"""AURA SDK Observability monitoring.
+"""
 
 class Monitoring:
     """Placeholder implementation for aura_sdk.observability.monitoring."""

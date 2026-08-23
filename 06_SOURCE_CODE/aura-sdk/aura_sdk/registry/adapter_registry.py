@@ -1,4 +1,5 @@
-AURA SDK Registry adapter_registry.
+"""AURA SDK Registry adapter_registry.
+"""
 
 class AdapterRegistry:
     """Placeholder implementation for aura_sdk.registry.adapter_registry."""

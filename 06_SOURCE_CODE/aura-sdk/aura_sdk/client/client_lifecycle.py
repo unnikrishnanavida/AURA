@@ -1,4 +1,5 @@
-AURA SDK Client client_lifecycle.
+"""AURA SDK Client client_lifecycle.
+"""
 
 class ClientLifecycle:
     """Placeholder implementation for aura_sdk.client.client_lifecycle."""

@@ -1,4 +1,5 @@
-AURA SDK Execution Graph graph_deserializer.
+"""AURA SDK Execution Graph graph_deserializer.
+"""
 
 class GraphDeserializer:
     """Placeholder implementation for aura_sdk.execution_graph.graph_deserializer."""

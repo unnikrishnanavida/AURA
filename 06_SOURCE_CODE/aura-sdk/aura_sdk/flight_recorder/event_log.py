@@ -1,4 +1,5 @@
-AURA SDK Flight Recorder event_log.
+"""AURA SDK Flight Recorder event_log.
+"""
 
 class EventLog:
     """Placeholder implementation for aura_sdk.flight_recorder.event_log."""

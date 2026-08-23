@@ -1,4 +1,5 @@
-AURA SDK Providers provider_metrics.
+"""AURA SDK Providers provider_metrics.
+"""
 
 class ProviderMetrics:
     """Placeholder implementation for aura_sdk.providers.provider_metrics."""

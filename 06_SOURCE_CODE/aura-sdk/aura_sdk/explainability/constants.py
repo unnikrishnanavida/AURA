@@ -1,3 +1,11 @@
-AURA SDK Explainability constants.
+"""AURA SDK Explainability constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_EXPLAINABILITY_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.explainability"
+SUPPORTED_EXPLAINABILITY = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_EXPLAINABILITY_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_EXPLAINABILITY",
+]

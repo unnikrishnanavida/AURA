@@ -1,4 +1,5 @@
-AURA SDK Client retry_policy.
+"""AURA SDK Client retry_policy.
+"""
 
 class RetryPolicy:
     """Placeholder implementation for aura_sdk.client.retry_policy."""

@@ -1,4 +1,5 @@
-AURA SDK Pipelines exporter.
+"""AURA SDK Pipelines exporter.
+"""
 
 class Exporter:
     """Placeholder implementation for aura_sdk.pipelines.exporter."""

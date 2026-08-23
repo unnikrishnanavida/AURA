@@ -1,4 +1,5 @@
-AURA SDK Routing model_router.
+"""AURA SDK Routing model_router.
+"""
 
 class ModelRouter:
     """Placeholder implementation for aura_sdk.routing.model_router."""

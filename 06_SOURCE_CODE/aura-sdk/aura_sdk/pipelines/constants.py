@@ -1,3 +1,11 @@
-AURA SDK Pipelines constants.
+"""AURA SDK Pipelines constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_PIPELINES_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.pipelines"
+SUPPORTED_PIPELINES = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_PIPELINES_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_PIPELINES",
+]

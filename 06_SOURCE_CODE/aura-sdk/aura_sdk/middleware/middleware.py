@@ -1,4 +1,5 @@
-AURA SDK Middleware middleware.
+"""AURA SDK Middleware middleware.
+"""
 
 class Middleware:
     """Placeholder implementation for aura_sdk.middleware.middleware."""

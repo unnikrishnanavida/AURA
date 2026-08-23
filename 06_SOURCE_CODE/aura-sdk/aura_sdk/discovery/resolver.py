@@ -1,4 +1,5 @@
-AURA SDK Discovery resolver.
+"""AURA SDK Discovery resolver.
+"""
 
 class Resolver:
     """Placeholder implementation for aura_sdk.discovery.resolver."""

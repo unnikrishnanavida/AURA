@@ -1,4 +1,5 @@
-AURA SDK Utilities converters.
+"""AURA SDK Utilities converters.
+"""
 
 class Converters:
     """Placeholder implementation for aura_sdk.utilities.converters."""

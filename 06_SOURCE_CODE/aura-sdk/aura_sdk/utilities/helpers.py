@@ -1,4 +1,5 @@
-AURA SDK Utilities helpers.
+"""AURA SDK Utilities helpers.
+"""
 
 class Helpers:
     """Placeholder implementation for aura_sdk.utilities.helpers."""

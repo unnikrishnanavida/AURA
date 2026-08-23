@@ -1,4 +1,5 @@
-AURA SDK Transactions recovery.
+"""AURA SDK Transactions recovery.
+"""
 
 class Recovery:
     """Placeholder implementation for aura_sdk.transactions.recovery."""

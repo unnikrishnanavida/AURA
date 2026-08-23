@@ -1,4 +1,5 @@
-AURA SDK Discovery/ Internal registry_sync.
+"""AURA SDK Discovery/ Internal registry_sync.
+"""
 
 class RegistrySync:
     """Placeholder implementation for aura_sdk.discovery/_internal.registry_sync."""

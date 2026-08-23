@@ -1,4 +1,5 @@
-AURA SDK Marketplace signatures.
+"""AURA SDK Marketplace signatures.
+"""
 
 class Signatures:
     """Placeholder implementation for aura_sdk.marketplace.signatures."""

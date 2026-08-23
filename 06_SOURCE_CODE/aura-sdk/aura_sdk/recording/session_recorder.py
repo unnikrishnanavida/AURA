@@ -1,4 +1,5 @@
-AURA SDK Recording session_recorder.
+"""AURA SDK Recording session_recorder.
+"""
 
 class SessionRecorder:
     """Placeholder implementation for aura_sdk.recording.session_recorder."""

@@ -1,4 +1,5 @@
-AURA SDK Orchestration dispatcher.
+"""AURA SDK Orchestration dispatcher.
+"""
 
 class Dispatcher:
     """Placeholder implementation for aura_sdk.orchestration.dispatcher."""

@@ -1,4 +1,5 @@
-AURA SDK Middleware logging.
+"""AURA SDK Middleware logging.
+"""
 
 class Logging:
     """Placeholder implementation for aura_sdk.middleware.logging."""

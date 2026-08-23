@@ -1,3 +1,11 @@
-AURA SDK Factories constants.
+"""AURA SDK Factories constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_FACTORIES_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.factories"
+SUPPORTED_FACTORIES = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_FACTORIES_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_FACTORIES",
+]

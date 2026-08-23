@@ -1,4 +1,5 @@
-AURA SDK Models token.
+"""AURA SDK Models token.
+"""
 
 class Token:
     """Placeholder implementation for aura_sdk.models.token."""

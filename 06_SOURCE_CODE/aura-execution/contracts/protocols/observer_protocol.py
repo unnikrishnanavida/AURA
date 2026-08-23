@@ -1,0 +1,3 @@
+from typing import Protocol
+class ObserverProtocol(Protocol):
+    def observe(self, before, after): ...

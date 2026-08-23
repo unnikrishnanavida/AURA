@@ -1,4 +1,5 @@
-AURA SDK Pipelines importer.
+"""AURA SDK Pipelines importer.
+"""
 
 class Importer:
     """Placeholder implementation for aura_sdk.pipelines.importer."""

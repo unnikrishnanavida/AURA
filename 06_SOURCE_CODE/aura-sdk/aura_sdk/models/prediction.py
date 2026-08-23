@@ -1,4 +1,5 @@
-AURA SDK Models prediction.
+"""AURA SDK Models prediction.
+"""
 
 class Prediction:
     """Placeholder implementation for aura_sdk.models.prediction."""

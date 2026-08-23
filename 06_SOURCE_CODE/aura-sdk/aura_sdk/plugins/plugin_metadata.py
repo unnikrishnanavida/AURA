@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_metadata.
+"""AURA SDK Plugins plugin_metadata.
+"""
 
 class PluginMetadata:
     """Placeholder implementation for aura_sdk.plugins.plugin_metadata."""

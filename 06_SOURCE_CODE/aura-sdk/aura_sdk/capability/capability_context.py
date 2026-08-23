@@ -1,4 +1,5 @@
-AURA SDK Capability capability_context.
+"""AURA SDK Capability capability_context.
+"""
 
 class CapabilityContext:
     """Placeholder implementation for aura_sdk.capability.capability_context."""

@@ -1,4 +1,5 @@
-AURA SDK Models user.
+"""AURA SDK Models user.
+"""
 
 class User:
     """Placeholder implementation for aura_sdk.models.user."""

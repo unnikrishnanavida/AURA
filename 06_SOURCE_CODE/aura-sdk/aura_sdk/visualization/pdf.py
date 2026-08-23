@@ -1,4 +1,5 @@
-AURA SDK Visualization pdf.
+"""AURA SDK Visualization pdf.
+"""
 
 class Pdf:
     """Placeholder implementation for aura_sdk.visualization.pdf."""

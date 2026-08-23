@@ -1,4 +1,5 @@
-AURA SDK Registry model_registry.
+"""AURA SDK Registry model_registry.
+"""
 
 class ModelRegistry:
     """Placeholder implementation for aura_sdk.registry.model_registry."""

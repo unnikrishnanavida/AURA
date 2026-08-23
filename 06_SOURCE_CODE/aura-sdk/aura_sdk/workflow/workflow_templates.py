@@ -1,4 +1,5 @@
-AURA SDK Workflow workflow_templates.
+"""AURA SDK Workflow workflow_templates.
+"""
 
 class WorkflowTemplates:
     """Placeholder implementation for aura_sdk.workflow.workflow_templates."""

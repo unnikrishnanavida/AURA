@@ -1,4 +1,5 @@
-AURA SDK Adapters adapter_validator.
+"""AURA SDK Adapters adapter_validator.
+"""
 
 class AdapterValidator:
     """Placeholder implementation for aura_sdk.adapters.adapter_validator."""

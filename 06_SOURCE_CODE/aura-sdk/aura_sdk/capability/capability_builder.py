@@ -1,4 +1,5 @@
-AURA SDK Capability capability_builder.
+"""AURA SDK Capability capability_builder.
+"""
 
 class CapabilityBuilder:
     """Placeholder implementation for aura_sdk.capability.capability_builder."""

@@ -1,4 +1,5 @@
-AURA SDK Factories provider_factory.
+"""AURA SDK Factories provider_factory.
+"""
 
 class ProviderFactory:
     """Placeholder implementation for aura_sdk.factories.provider_factory."""

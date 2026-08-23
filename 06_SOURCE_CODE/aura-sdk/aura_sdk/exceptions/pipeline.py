@@ -1,4 +1,5 @@
-AURA SDK Exceptions pipeline.
+"""AURA SDK Exceptions pipeline.
+"""
 
 class Pipeline:
     """Placeholder implementation for aura_sdk.exceptions.pipeline."""

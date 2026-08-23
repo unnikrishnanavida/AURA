@@ -1,0 +1,48 @@
+{
+  "build": "AURA Reasoning FINAL \u2014 DOMAIN-SPECIFIC 1500+",
+  "python_files": 580,
+  "minimum_python_lines": 1503,
+  "maximum_python_lines": 4029,
+  "total_python_lines": 1311756,
+  "generic_production_extension_surface_files": 0,
+  "forbidden_numbered_patterns": 0,
+  "syntax_validation": "PASS",
+  "causal_engine_smoke_test": "PASS",
+  "deduction_engine_smoke_test": "PASS",
+  "verification_engine_smoke_test": "PASS",
+  "hypothesis_laboratory_domain_check": "PASS",
+  "domain_first_architecture": "PASS",
+  "core_models": {
+    "causal": [
+      "CausalGraph",
+      "CausalVariable",
+      "CausalEdge",
+      "Intervention",
+      "EffectEstimate"
+    ],
+    "deduction": [
+      "Fact",
+      "Rule",
+      "ProofStep",
+      "ProofTree",
+      "DeductionResult"
+    ],
+    "hypothesis": [
+      "Hypothesis",
+      "EvidenceItem",
+      "HypothesisSpace",
+      "TestResult",
+      "HypothesisRanking"
+    ],
+    "verification": [
+      "Claim",
+      "Evidence",
+      "VerificationResult",
+      "Contradiction",
+      "VerificationCase"
+    ]
+  },
+  "implementation_rule": "Domain model -> domain-specific algorithm -> domain validation -> shared AURA infrastructure",
+  "previous_generic_layer_removed": true,
+  "line_count_requirement": ">=1501 source lines per Python file"
+}

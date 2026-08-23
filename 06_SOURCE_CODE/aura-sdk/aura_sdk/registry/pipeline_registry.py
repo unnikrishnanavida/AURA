@@ -1,4 +1,5 @@
-AURA SDK Registry pipeline_registry.
+"""AURA SDK Registry pipeline_registry.
+"""
 
 class PipelineRegistry:
     """Placeholder implementation for aura_sdk.registry.pipeline_registry."""

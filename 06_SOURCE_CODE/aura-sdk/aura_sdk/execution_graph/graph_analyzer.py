@@ -1,4 +1,5 @@
-AURA SDK Execution Graph graph_analyzer.
+"""AURA SDK Execution Graph graph_analyzer.
+"""
 
 class GraphAnalyzer:
     """Placeholder implementation for aura_sdk.execution_graph.graph_analyzer."""

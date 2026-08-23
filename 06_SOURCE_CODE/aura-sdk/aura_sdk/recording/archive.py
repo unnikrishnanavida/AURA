@@ -1,4 +1,5 @@
-AURA SDK Recording archive.
+"""AURA SDK Recording archive.
+"""
 
 class Archive:
     """Placeholder implementation for aura_sdk.recording.archive."""

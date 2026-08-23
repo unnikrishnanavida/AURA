@@ -1,4 +1,5 @@
-AURA SDK Debugging watchpoints.
+"""AURA SDK Debugging watchpoints.
+"""
 
 class Watchpoints:
     """Placeholder implementation for aura_sdk.debugging.watchpoints."""

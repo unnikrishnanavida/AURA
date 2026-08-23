@@ -1,4 +1,5 @@
-AURA SDK Simulation reports.
+"""AURA SDK Simulation reports.
+"""
 
 class Reports:
     """Placeholder implementation for aura_sdk.simulation.reports."""

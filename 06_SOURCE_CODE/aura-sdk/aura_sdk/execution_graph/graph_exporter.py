@@ -1,4 +1,5 @@
-AURA SDK Execution Graph graph_exporter.
+"""AURA SDK Execution Graph graph_exporter.
+"""
 
 class GraphExporter:
     """Placeholder implementation for aura_sdk.execution_graph.graph_exporter."""

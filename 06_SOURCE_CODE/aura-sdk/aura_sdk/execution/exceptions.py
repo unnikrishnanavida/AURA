@@ -1,3 +1,20 @@
-AURA SDK Execution exceptions.
+"""AURA SDK Execution exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class ExecutionError(Exception):
+    """Base exception for aura_sdk.execution."""
+
+
+class ExecutionNotFoundError(ExecutionError):
+    """Raised when a execution resource is missing."""
+
+
+class ExecutionValidationError(ExecutionError):
+    """Raised when a execution resource fails validation."""
+
+
+__all__ = [
+    "ExecutionError",
+    "ExecutionNotFoundError",
+    "ExecutionValidationError",
+]

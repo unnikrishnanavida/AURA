@@ -1,4 +1,5 @@
-AURA SDK Registry capability_registry.
+"""AURA SDK Registry capability_registry.
+"""
 
 class CapabilityRegistry:
     """Placeholder implementation for aura_sdk.registry.capability_registry."""

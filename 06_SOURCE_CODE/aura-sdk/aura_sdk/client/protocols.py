@@ -1,4 +1,5 @@
-AURA SDK Client protocols.
+"""AURA SDK Client protocols.
+"""
 
 class Protocols:
     """Placeholder implementation for aura_sdk.client.protocols."""

@@ -1,4 +1,5 @@
-AURA SDK Routing request_router.
+"""AURA SDK Routing request_router.
+"""
 
 class RequestRouter:
     """Placeholder implementation for aura_sdk.routing.request_router."""

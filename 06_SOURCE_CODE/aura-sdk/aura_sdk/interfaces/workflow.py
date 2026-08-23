@@ -1,4 +1,5 @@
-AURA SDK Interfaces workflow.
+"""AURA SDK Interfaces workflow.
+"""
 
 class Workflow:
     """Placeholder implementation for aura_sdk.interfaces.workflow."""

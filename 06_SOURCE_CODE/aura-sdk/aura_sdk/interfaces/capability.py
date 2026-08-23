@@ -1,4 +1,5 @@
-AURA SDK Interfaces capability.
+"""AURA SDK Interfaces capability.
+"""
 
 class Capability:
     """Placeholder implementation for aura_sdk.interfaces.capability."""

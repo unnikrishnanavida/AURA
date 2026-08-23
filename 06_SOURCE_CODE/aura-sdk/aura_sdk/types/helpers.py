@@ -1,4 +1,5 @@
-AURA SDK Types helpers.
+"""AURA SDK Types helpers.
+"""
 
 class Helpers:
     """Placeholder implementation for aura_sdk.types.helpers."""

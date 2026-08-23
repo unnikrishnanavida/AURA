@@ -1,4 +1,5 @@
-AURA SDK Visualization exporter.
+"""AURA SDK Visualization exporter.
+"""
 
 class Exporter:
     """Placeholder implementation for aura_sdk.visualization.exporter."""

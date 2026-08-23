@@ -1,4 +1,5 @@
-AURA SDK Capability metadata.
+"""AURA SDK Capability metadata.
+"""
 
 class Metadata:
     """Placeholder implementation for aura_sdk.capability.metadata."""

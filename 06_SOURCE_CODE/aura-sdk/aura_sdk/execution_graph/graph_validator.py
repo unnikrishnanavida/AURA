@@ -1,4 +1,5 @@
-AURA SDK Execution Graph graph_validator.
+"""AURA SDK Execution Graph graph_validator.
+"""
 
 class GraphValidator:
     """Placeholder implementation for aura_sdk.execution_graph.graph_validator."""

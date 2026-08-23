@@ -1,4 +1,5 @@
-AURA SDK Models completion.
+"""AURA SDK Models completion.
+"""
 
 class Completion:
     """Placeholder implementation for aura_sdk.models.completion."""

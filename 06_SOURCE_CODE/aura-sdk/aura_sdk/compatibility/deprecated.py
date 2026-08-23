@@ -1,4 +1,5 @@
-AURA SDK Compatibility deprecated.
+"""AURA SDK Compatibility deprecated.
+"""
 
 class Deprecated:
     """Placeholder implementation for aura_sdk.compatibility.deprecated."""

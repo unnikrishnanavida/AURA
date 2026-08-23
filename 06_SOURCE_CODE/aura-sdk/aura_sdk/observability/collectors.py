@@ -1,4 +1,5 @@
-AURA SDK Observability collectors.
+"""AURA SDK Observability collectors.
+"""
 
 class Collectors:
     """Placeholder implementation for aura_sdk.observability.collectors."""

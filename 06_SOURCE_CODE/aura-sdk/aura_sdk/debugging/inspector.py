@@ -1,4 +1,5 @@
-AURA SDK Debugging inspector.
+"""AURA SDK Debugging inspector.
+"""
 
 class Inspector:
     """Placeholder implementation for aura_sdk.debugging.inspector."""

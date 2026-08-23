@@ -1,4 +1,5 @@
-AURA SDK Orchestration recovery.
+"""AURA SDK Orchestration recovery.
+"""
 
 class Recovery:
     """Placeholder implementation for aura_sdk.orchestration.recovery."""

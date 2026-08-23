@@ -1,3 +1,11 @@
-AURA SDK Marketplace constants.
+"""AURA SDK Marketplace constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_MARKETPLACE_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.marketplace"
+SUPPORTED_MARKETPLACE = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_MARKETPLACE_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_MARKETPLACE",
+]

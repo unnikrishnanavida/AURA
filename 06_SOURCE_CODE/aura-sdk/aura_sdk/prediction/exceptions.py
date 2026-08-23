@@ -1,3 +1,20 @@
-AURA SDK Prediction exceptions.
+"""AURA SDK Prediction exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class PredictionError(Exception):
+    """Base exception for aura_sdk.prediction."""
+
+
+class PredictionNotFoundError(PredictionError):
+    """Raised when a prediction resource is missing."""
+
+
+class PredictionValidationError(PredictionError):
+    """Raised when a prediction resource fails validation."""
+
+
+__all__ = [
+    "PredictionError",
+    "PredictionNotFoundError",
+    "PredictionValidationError",
+]

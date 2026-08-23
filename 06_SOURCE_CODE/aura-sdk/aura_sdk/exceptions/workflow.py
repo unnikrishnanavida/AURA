@@ -1,4 +1,5 @@
-AURA SDK Exceptions workflow.
+"""AURA SDK Exceptions workflow.
+"""
 
 class Workflow:
     """Placeholder implementation for aura_sdk.exceptions.workflow."""

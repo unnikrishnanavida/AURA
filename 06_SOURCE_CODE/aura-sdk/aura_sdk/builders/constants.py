@@ -1,3 +1,11 @@
-AURA SDK Builders constants.
+"""AURA SDK Builders constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_BUILDERS_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.builders"
+SUPPORTED_BUILDERS = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_BUILDERS_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_BUILDERS",
+]

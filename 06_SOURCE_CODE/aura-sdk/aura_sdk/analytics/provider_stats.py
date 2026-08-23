@@ -1,4 +1,5 @@
-AURA SDK Analytics provider_stats.
+"""AURA SDK Analytics provider_stats.
+"""
 
 class ProviderStats:
     """Placeholder implementation for aura_sdk.analytics.provider_stats."""

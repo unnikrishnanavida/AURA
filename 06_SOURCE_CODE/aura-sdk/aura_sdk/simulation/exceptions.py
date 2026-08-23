@@ -1,3 +1,20 @@
-AURA SDK Simulation exceptions.
+"""AURA SDK Simulation exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class SimulationError(Exception):
+    """Base exception for aura_sdk.simulation."""
+
+
+class SimulationNotFoundError(SimulationError):
+    """Raised when a simulation resource is missing."""
+
+
+class SimulationValidationError(SimulationError):
+    """Raised when a simulation resource fails validation."""
+
+
+__all__ = [
+    "SimulationError",
+    "SimulationNotFoundError",
+    "SimulationValidationError",
+]

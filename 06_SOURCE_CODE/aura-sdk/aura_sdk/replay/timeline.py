@@ -1,4 +1,5 @@
-AURA SDK Replay timeline.
+"""AURA SDK Replay timeline.
+"""
 
 class Timeline:
     """Placeholder implementation for aura_sdk.replay.timeline."""

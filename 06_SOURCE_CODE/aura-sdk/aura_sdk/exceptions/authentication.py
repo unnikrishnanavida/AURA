@@ -1,4 +1,5 @@
-AURA SDK Exceptions authentication.
+"""AURA SDK Exceptions authentication.
+"""
 
 class Authentication:
     """Placeholder implementation for aura_sdk.exceptions.authentication."""

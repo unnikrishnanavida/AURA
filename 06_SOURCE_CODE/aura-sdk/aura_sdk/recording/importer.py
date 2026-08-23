@@ -1,4 +1,5 @@
-AURA SDK Recording importer.
+"""AURA SDK Recording importer.
+"""
 
 class Importer:
     """Placeholder implementation for aura_sdk.recording.importer."""

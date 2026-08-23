@@ -1,4 +1,5 @@
-AURA SDK Replay checkpoint.
+"""AURA SDK Replay checkpoint.
+"""
 
 class Checkpoint:
     """Placeholder implementation for aura_sdk.replay.checkpoint."""

@@ -1,4 +1,5 @@
-AURA SDK Execution Graph graph.
+"""AURA SDK Execution Graph graph.
+"""
 
 class Graph:
     """Placeholder implementation for aura_sdk.execution_graph.graph."""

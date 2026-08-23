@@ -1,3 +1,20 @@
-AURA SDK Observability exceptions.
+"""AURA SDK Observability exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class ObservabilityError(Exception):
+    """Base exception for aura_sdk.observability."""
+
+
+class ObservabilityNotFoundError(ObservabilityError):
+    """Raised when a observability resource is missing."""
+
+
+class ObservabilityValidationError(ObservabilityError):
+    """Raised when a observability resource fails validation."""
+
+
+__all__ = [
+    "ObservabilityError",
+    "ObservabilityNotFoundError",
+    "ObservabilityValidationError",
+]

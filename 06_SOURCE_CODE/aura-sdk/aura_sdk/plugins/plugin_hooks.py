@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_hooks.
+"""AURA SDK Plugins plugin_hooks.
+"""
 
 class PluginHooks:
     """Placeholder implementation for aura_sdk.plugins.plugin_hooks."""

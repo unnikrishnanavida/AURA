@@ -1,4 +1,5 @@
-AURA SDK Visualization timeline.
+"""AURA SDK Visualization timeline.
+"""
 
 class Timeline:
     """Placeholder implementation for aura_sdk.visualization.timeline."""

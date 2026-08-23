@@ -1,4 +1,5 @@
-AURA SDK Discovery dependency_discovery.
+"""AURA SDK Discovery dependency_discovery.
+"""
 
 class DependencyDiscovery:
     """Placeholder implementation for aura_sdk.discovery.dependency_discovery."""

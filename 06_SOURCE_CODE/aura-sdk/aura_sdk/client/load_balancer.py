@@ -1,4 +1,5 @@
-AURA SDK Client load_balancer.
+"""AURA SDK Client load_balancer.
+"""
 
 class LoadBalancer:
     """Placeholder implementation for aura_sdk.client.load_balancer."""

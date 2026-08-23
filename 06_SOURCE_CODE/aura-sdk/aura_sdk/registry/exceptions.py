@@ -1,3 +1,20 @@
-AURA SDK Registry exceptions.
+"""AURA SDK Registry exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class RegistryError(Exception):
+    """Base exception for aura_sdk.registry."""
+
+
+class RegistryNotFoundError(RegistryError):
+    """Raised when a registry resource is missing."""
+
+
+class RegistryValidationError(RegistryError):
+    """Raised when a registry resource fails validation."""
+
+
+__all__ = [
+    "RegistryError",
+    "RegistryNotFoundError",
+    "RegistryValidationError",
+]

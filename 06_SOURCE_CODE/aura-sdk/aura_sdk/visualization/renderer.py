@@ -1,4 +1,5 @@
-AURA SDK Visualization renderer.
+"""AURA SDK Visualization renderer.
+"""
 
 class Renderer:
     """Placeholder implementation for aura_sdk.visualization.renderer."""

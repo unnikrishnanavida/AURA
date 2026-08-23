@@ -1,4 +1,5 @@
-AURA SDK Debugging profiler.
+"""AURA SDK Debugging profiler.
+"""
 
 class Profiler:
     """Placeholder implementation for aura_sdk.debugging.profiler."""

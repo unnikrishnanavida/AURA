@@ -1,4 +1,5 @@
-AURA SDK Sandbox sandbox.
+"""AURA SDK Sandbox sandbox.
+"""
 
 class Sandbox:
     """Placeholder implementation for aura_sdk.sandbox.sandbox."""

@@ -1,4 +1,5 @@
-AURA SDK Types aliases.
+"""AURA SDK Types aliases.
+"""
 
 class Aliases:
     """Placeholder implementation for aura_sdk.types.aliases."""

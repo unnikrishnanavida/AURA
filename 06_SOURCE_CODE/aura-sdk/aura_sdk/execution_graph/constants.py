@@ -1,3 +1,11 @@
-AURA SDK Execution Graph constants.
+"""AURA SDK Execution Graph constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_EXECUTION_GRAPH_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.execution_graph"
+SUPPORTED_EXECUTION_GRAPH = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_EXECUTION_GRAPH_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_EXECUTION_GRAPH",
+]

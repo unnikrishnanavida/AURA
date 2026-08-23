@@ -1,4 +1,5 @@
-AURA SDK Execution execution_metrics.
+"""AURA SDK Execution execution_metrics.
+"""
 
 class ExecutionMetrics:
     """Placeholder implementation for aura_sdk.execution.execution_metrics."""

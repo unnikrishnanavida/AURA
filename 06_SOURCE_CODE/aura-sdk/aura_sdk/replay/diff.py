@@ -1,4 +1,5 @@
-AURA SDK Replay diff.
+"""AURA SDK Replay diff.
+"""
 
 class Diff:
     """Placeholder implementation for aura_sdk.replay.diff."""

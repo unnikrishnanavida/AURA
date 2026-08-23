@@ -1,4 +1,5 @@
-AURA SDK Visualization svg.
+"""AURA SDK Visualization svg.
+"""
 
 class Svg:
     """Placeholder implementation for aura_sdk.visualization.svg."""

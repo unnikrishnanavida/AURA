@@ -1,4 +1,5 @@
-AURA SDK Plugins plugin_monitor.
+"""AURA SDK Plugins plugin_monitor.
+"""
 
 class PluginMonitor:
     """Placeholder implementation for aura_sdk.plugins.plugin_monitor."""

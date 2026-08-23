@@ -1,4 +1,5 @@
-AURA SDK Debugging timeline.
+"""AURA SDK Debugging timeline.
+"""
 
 class Timeline:
     """Placeholder implementation for aura_sdk.debugging.timeline."""

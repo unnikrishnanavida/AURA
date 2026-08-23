@@ -1,4 +1,5 @@
-AURA SDK Optimization recommendation.
+"""AURA SDK Optimization recommendation.
+"""
 
 class Recommendation:
     """Placeholder implementation for aura_sdk.optimization.recommendation."""

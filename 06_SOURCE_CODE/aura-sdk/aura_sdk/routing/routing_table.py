@@ -1,4 +1,5 @@
-AURA SDK Routing routing_table.
+"""AURA SDK Routing routing_table.
+"""
 
 class RoutingTable:
     """Placeholder implementation for aura_sdk.routing.routing_table."""

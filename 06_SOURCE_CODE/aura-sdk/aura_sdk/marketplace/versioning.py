@@ -1,4 +1,5 @@
-AURA SDK Marketplace versioning.
+"""AURA SDK Marketplace versioning.
+"""
 
 class Versioning:
     """Placeholder implementation for aura_sdk.marketplace.versioning."""

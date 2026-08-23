@@ -1,4 +1,5 @@
-AURA SDK Factories graph_factory.
+"""AURA SDK Factories graph_factory.
+"""
 
 class GraphFactory:
     """Placeholder implementation for aura_sdk.factories.graph_factory."""

@@ -1,4 +1,5 @@
-AURA SDK Compatibility provider_versions.
+"""AURA SDK Compatibility provider_versions.
+"""
 
 class ProviderVersions:
     """Placeholder implementation for aura_sdk.compatibility.provider_versions."""

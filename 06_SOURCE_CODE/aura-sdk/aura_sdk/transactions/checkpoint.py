@@ -1,4 +1,5 @@
-AURA SDK Transactions checkpoint.
+"""AURA SDK Transactions checkpoint.
+"""
 
 class Checkpoint:
     """Placeholder implementation for aura_sdk.transactions.checkpoint."""

@@ -1,4 +1,5 @@
-AURA SDK Sandbox permissions.
+"""AURA SDK Sandbox permissions.
+"""
 
 class Permissions:
     """Placeholder implementation for aura_sdk.sandbox.permissions."""

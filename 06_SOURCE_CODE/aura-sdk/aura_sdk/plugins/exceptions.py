@@ -1,3 +1,20 @@
-AURA SDK Plugins exceptions.
+"""AURA SDK Plugins exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class PluginError(Exception):
+    """Base exception for aura_sdk.plugins."""
+
+
+class PluginNotFoundError(PluginError):
+    """Raised when a plugins resource is missing."""
+
+
+class PluginValidationError(PluginError):
+    """Raised when a plugins resource fails validation."""
+
+
+__all__ = [
+    "PluginError",
+    "PluginNotFoundError",
+    "PluginValidationError",
+]

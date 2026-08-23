@@ -1,4 +1,5 @@
-AURA SDK Capability capability_validator.
+"""AURA SDK Capability capability_validator.
+"""
 
 class CapabilityValidator:
     """Placeholder implementation for aura_sdk.capability.capability_validator."""

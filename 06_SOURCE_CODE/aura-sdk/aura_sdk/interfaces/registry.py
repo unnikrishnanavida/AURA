@@ -1,4 +1,5 @@
-AURA SDK Interfaces registry.
+"""AURA SDK Interfaces registry.
+"""
 
 class Registry:
     """Placeholder implementation for aura_sdk.interfaces.registry."""

@@ -1,4 +1,5 @@
-AURA SDK Observability health.
+"""AURA SDK Observability health.
+"""
 
 class Health:
     """Placeholder implementation for aura_sdk.observability.health."""

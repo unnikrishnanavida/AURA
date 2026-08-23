@@ -1,4 +1,5 @@
-AURA SDK Models agent.
+"""AURA SDK Models agent.
+"""
 
 class Agent:
     """Placeholder implementation for aura_sdk.models.agent."""

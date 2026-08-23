@@ -1,4 +1,5 @@
-AURA SDK Execution execution_tracker.
+"""AURA SDK Execution execution_tracker.
+"""
 
 class ExecutionTracker:
     """Placeholder implementation for aura_sdk.execution.execution_tracker."""

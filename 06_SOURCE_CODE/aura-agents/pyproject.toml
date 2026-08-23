@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aura-agent"
+version = "0.1.0"
+description = "AURA Agent - autonomous agent lifecycle, goals, autonomy, action orchestration, execution, delegation and multi-agent runtime for the AURA ecosystem."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "AURA" }]
+keywords = ["aura", "agent", "autonomous", "execution", "runtime"]
+
+dependencies = []
+
+[project.optional-dependencies]
+pydantic = { version = ">=2.0" }
+
+[tool.setuptools.packages.find]
+where = ["aura_agent"]

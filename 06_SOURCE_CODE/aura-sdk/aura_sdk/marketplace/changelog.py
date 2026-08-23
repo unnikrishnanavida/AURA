@@ -1,4 +1,5 @@
-AURA SDK Marketplace changelog.
+"""AURA SDK Marketplace changelog.
+"""
 
 class Changelog:
     """Placeholder implementation for aura_sdk.marketplace.changelog."""

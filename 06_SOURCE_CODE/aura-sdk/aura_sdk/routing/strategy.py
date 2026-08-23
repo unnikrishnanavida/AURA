@@ -1,4 +1,5 @@
-AURA SDK Routing strategy.
+"""AURA SDK Routing strategy.
+"""
 
 class Strategy:
     """Placeholder implementation for aura_sdk.routing.strategy."""

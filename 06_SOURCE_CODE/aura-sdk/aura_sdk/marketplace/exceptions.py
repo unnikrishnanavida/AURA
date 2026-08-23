@@ -1,3 +1,20 @@
-AURA SDK Marketplace exceptions.
+"""AURA SDK Marketplace exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class MarketplaceError(Exception):
+    """Base exception for aura_sdk.marketplace."""
+
+
+class MarketplaceNotFoundError(MarketplaceError):
+    """Raised when a marketplace resource is missing."""
+
+
+class MarketplaceValidationError(MarketplaceError):
+    """Raised when a marketplace resource fails validation."""
+
+
+__all__ = [
+    "MarketplaceError",
+    "MarketplaceNotFoundError",
+    "MarketplaceValidationError",
+]

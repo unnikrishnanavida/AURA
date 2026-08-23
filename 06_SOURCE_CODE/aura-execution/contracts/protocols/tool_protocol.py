@@ -1,0 +1,3 @@
+from typing import Protocol
+class ToolProtocol(Protocol):
+    def invoke(self, inputs: dict, timeout: float): ...

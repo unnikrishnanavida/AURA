@@ -1,3 +1,20 @@
-AURA SDK Adapters exceptions.
+"""AURA SDK Adapters exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class AdapterError(Exception):
+    """Base exception for aura_sdk.adapters."""
+
+
+class AdapterNotFoundError(AdapterError):
+    """Raised when a adapters resource is missing."""
+
+
+class AdapterValidationError(AdapterError):
+    """Raised when a adapters resource fails validation."""
+
+
+__all__ = [
+    "AdapterError",
+    "AdapterNotFoundError",
+    "AdapterValidationError",
+]

@@ -1,4 +1,5 @@
-AURA SDK Utilities decorators.
+"""AURA SDK Utilities decorators.
+"""
 
 class Decorators:
     """Placeholder implementation for aura_sdk.utilities.decorators."""

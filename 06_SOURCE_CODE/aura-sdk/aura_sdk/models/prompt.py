@@ -1,4 +1,5 @@
-AURA SDK Models prompt.
+"""AURA SDK Models prompt.
+"""
 
 class Prompt:
     """Placeholder implementation for aura_sdk.models.prompt."""

@@ -1,4 +1,5 @@
-AURA SDK Compatibility feature_flags.
+"""AURA SDK Compatibility feature_flags.
+"""
 
 class FeatureFlags:
     """Placeholder implementation for aura_sdk.compatibility.feature_flags."""

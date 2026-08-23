@@ -1,4 +1,5 @@
-AURA SDK Observability exporters.
+"""AURA SDK Observability exporters.
+"""
 
 class Exporters:
     """Placeholder implementation for aura_sdk.observability.exporters."""

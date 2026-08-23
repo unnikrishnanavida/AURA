@@ -1,3 +1,20 @@
-AURA SDK Compatibility exceptions.
+"""AURA SDK Compatibility exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class CompatibilityError(Exception):
+    """Base exception for aura_sdk.compatibility."""
+
+
+class CompatibilityNotFoundError(CompatibilityError):
+    """Raised when a compatibility resource is missing."""
+
+
+class CompatibilityValidationError(CompatibilityError):
+    """Raised when a compatibility resource fails validation."""
+
+
+__all__ = [
+    "CompatibilityError",
+    "CompatibilityNotFoundError",
+    "CompatibilityValidationError",
+]

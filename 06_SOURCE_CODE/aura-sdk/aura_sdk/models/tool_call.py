@@ -1,4 +1,5 @@
-AURA SDK Models tool_call.
+"""AURA SDK Models tool_call.
+"""
 
 class ToolCall:
     """Placeholder implementation for aura_sdk.models.tool_call."""

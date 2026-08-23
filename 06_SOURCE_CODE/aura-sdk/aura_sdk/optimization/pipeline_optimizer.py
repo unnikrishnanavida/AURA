@@ -1,4 +1,5 @@
-AURA SDK Optimization pipeline_optimizer.
+"""AURA SDK Optimization pipeline_optimizer.
+"""
 
 class PipelineOptimizer:
     """Placeholder implementation for aura_sdk.optimization.pipeline_optimizer."""

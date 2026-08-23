@@ -1,4 +1,5 @@
-AURA SDK Workflow exporter.
+"""AURA SDK Workflow exporter.
+"""
 
 class Exporter:
     """Placeholder implementation for aura_sdk.workflow.exporter."""

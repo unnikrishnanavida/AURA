@@ -1,3 +1,11 @@
-AURA SDK Diagnostics constants.
+"""AURA SDK Diagnostics constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_DIAGNOSTICS_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.diagnostics"
+SUPPORTED_DIAGNOSTICS = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_DIAGNOSTICS_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_DIAGNOSTICS",
+]

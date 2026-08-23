@@ -1,3 +1,11 @@
-AURA SDK Types constants.
+"""AURA SDK Types constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_TYPES_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.types"
+SUPPORTED_TYPES = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_TYPES_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_TYPES",
+]

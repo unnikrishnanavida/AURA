@@ -1,4 +1,5 @@
-AURA SDK Simulation cost.
+"""AURA SDK Simulation cost.
+"""
 
 class Cost:
     """Placeholder implementation for aura_sdk.simulation.cost."""

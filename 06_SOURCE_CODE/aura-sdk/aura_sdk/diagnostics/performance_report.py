@@ -1,4 +1,5 @@
-AURA SDK Diagnostics performance_report.
+"""AURA SDK Diagnostics performance_report.
+"""
 
 class PerformanceReport:
     """Placeholder implementation for aura_sdk.diagnostics.performance_report."""

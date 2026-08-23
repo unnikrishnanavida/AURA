@@ -1,4 +1,5 @@
-AURA SDK Orchestration lifecycle.
+"""AURA SDK Orchestration lifecycle.
+"""
 
 class Lifecycle:
     """Placeholder implementation for aura_sdk.orchestration.lifecycle."""

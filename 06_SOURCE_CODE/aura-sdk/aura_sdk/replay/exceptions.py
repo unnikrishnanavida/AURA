@@ -1,3 +1,20 @@
-AURA SDK Replay exceptions.
+"""AURA SDK Replay exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class ReplayError(Exception):
+    """Base exception for aura_sdk.replay."""
+
+
+class ReplayNotFoundError(ReplayError):
+    """Raised when a replay resource is missing."""
+
+
+class ReplayValidationError(ReplayError):
+    """Raised when a replay resource fails validation."""
+
+
+__all__ = [
+    "ReplayError",
+    "ReplayNotFoundError",
+    "ReplayValidationError",
+]

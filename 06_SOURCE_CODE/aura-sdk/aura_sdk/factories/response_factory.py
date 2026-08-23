@@ -1,4 +1,5 @@
-AURA SDK Factories response_factory.
+"""AURA SDK Factories response_factory.
+"""
 
 class ResponseFactory:
     """Placeholder implementation for aura_sdk.factories.response_factory."""

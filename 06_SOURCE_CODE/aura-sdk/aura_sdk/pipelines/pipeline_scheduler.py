@@ -1,4 +1,5 @@
-AURA SDK Pipelines pipeline_scheduler.
+"""AURA SDK Pipelines pipeline_scheduler.
+"""
 
 class PipelineScheduler:
     """Placeholder implementation for aura_sdk.pipelines.pipeline_scheduler."""

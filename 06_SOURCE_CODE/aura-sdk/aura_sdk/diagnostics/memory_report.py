@@ -1,4 +1,5 @@
-AURA SDK Diagnostics memory_report.
+"""AURA SDK Diagnostics memory_report.
+"""
 
 class MemoryReport:
     """Placeholder implementation for aura_sdk.diagnostics.memory_report."""

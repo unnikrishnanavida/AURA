@@ -1,4 +1,5 @@
-AURA SDK Builders provider_builder.
+"""AURA SDK Builders provider_builder.
+"""
 
 class ProviderBuilder:
     """Placeholder implementation for aura_sdk.builders.provider_builder."""

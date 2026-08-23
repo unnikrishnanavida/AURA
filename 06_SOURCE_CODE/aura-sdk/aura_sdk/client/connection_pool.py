@@ -1,4 +1,5 @@
-AURA SDK Client connection_pool.
+"""AURA SDK Client connection_pool.
+"""
 
 class ConnectionPool:
     """Placeholder implementation for aura_sdk.client.connection_pool."""

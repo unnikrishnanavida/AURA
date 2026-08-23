@@ -1,4 +1,5 @@
-AURA SDK Capability capability_monitor.
+"""AURA SDK Capability capability_monitor.
+"""
 
 class CapabilityMonitor:
     """Placeholder implementation for aura_sdk.capability.capability_monitor."""

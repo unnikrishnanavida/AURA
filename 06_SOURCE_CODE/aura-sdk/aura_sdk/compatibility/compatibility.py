@@ -1,4 +1,5 @@
-AURA SDK Compatibility compatibility.
+"""AURA SDK Compatibility compatibility.
+"""
 
 class Compatibility:
     """Placeholder implementation for aura_sdk.compatibility.compatibility."""

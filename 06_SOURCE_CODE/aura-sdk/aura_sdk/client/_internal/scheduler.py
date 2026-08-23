@@ -1,4 +1,5 @@
-AURA SDK Client/ Internal scheduler.
+"""AURA SDK Client/ Internal scheduler.
+"""
 
 class Scheduler:
     """Placeholder implementation for aura_sdk.client/_internal.scheduler."""

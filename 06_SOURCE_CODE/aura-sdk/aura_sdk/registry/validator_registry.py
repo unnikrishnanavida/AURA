@@ -1,4 +1,5 @@
-AURA SDK Registry validator_registry.
+"""AURA SDK Registry validator_registry.
+"""
 
 class ValidatorRegistry:
     """Placeholder implementation for aura_sdk.registry.validator_registry."""

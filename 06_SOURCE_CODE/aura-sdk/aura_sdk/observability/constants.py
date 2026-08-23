@@ -1,3 +1,11 @@
-AURA SDK Observability constants.
+"""AURA SDK Observability constants."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+DEFAULT_OBSERVABILITY_TIMEOUT = 30
+PACKAGE_NAMESPACE = "aura_sdk.observability"
+SUPPORTED_OBSERVABILITY = ("default", "extended")
+
+__all__ = [
+    "DEFAULT_OBSERVABILITY_TIMEOUT",
+    "PACKAGE_NAMESPACE",
+    "SUPPORTED_OBSERVABILITY",
+]

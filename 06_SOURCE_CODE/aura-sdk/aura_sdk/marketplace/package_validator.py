@@ -1,4 +1,5 @@
-AURA SDK Marketplace package_validator.
+"""AURA SDK Marketplace package_validator.
+"""
 
 class PackageValidator:
     """Placeholder implementation for aura_sdk.marketplace.package_validator."""

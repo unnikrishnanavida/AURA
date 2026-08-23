@@ -1,4 +1,5 @@
-AURA SDK Orchestration state_machine.
+"""AURA SDK Orchestration state_machine.
+"""
 
 class StateMachine:
     """Placeholder implementation for aura_sdk.orchestration.state_machine."""

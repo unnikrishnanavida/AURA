@@ -1,4 +1,5 @@
-AURA SDK Middleware metrics.
+"""AURA SDK Middleware metrics.
+"""
 
 class Metrics:
     """Placeholder implementation for aura_sdk.middleware.metrics."""

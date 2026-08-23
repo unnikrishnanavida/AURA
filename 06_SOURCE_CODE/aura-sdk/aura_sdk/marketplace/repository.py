@@ -1,4 +1,5 @@
-AURA SDK Marketplace repository.
+"""AURA SDK Marketplace repository.
+"""
 
 class Repository:
     """Placeholder implementation for aura_sdk.marketplace.repository."""

@@ -1,4 +1,5 @@
-AURA SDK Middleware registry.
+"""AURA SDK Middleware registry.
+"""
 
 class Registry:
     """Placeholder implementation for aura_sdk.middleware.registry."""

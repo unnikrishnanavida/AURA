@@ -1,3 +1,20 @@
-AURA SDK Analytics exceptions.
+"""AURA SDK Analytics exceptions."""
 
-# TODO: Add {module_name} definitions for aura_sdk.{package}
+
+class AnalyticError(Exception):
+    """Base exception for aura_sdk.analytics."""
+
+
+class AnalyticNotFoundError(AnalyticError):
+    """Raised when a analytics resource is missing."""
+
+
+class AnalyticValidationError(AnalyticError):
+    """Raised when a analytics resource fails validation."""
+
+
+__all__ = [
+    "AnalyticError",
+    "AnalyticNotFoundError",
+    "AnalyticValidationError",
+]

@@ -1,4 +1,5 @@
-AURA SDK Interfaces serializer.
+"""AURA SDK Interfaces serializer.
+"""
 
 class Serializer:
     """Placeholder implementation for aura_sdk.interfaces.serializer."""

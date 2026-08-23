@@ -1,4 +1,5 @@
-AURA SDK Prediction token_predictor.
+"""AURA SDK Prediction token_predictor.
+"""
 
 class TokenPredictor:
     """Placeholder implementation for aura_sdk.prediction.token_predictor."""

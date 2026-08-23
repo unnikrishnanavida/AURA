@@ -1,4 +1,5 @@
-AURA SDK Digital Twin timeline.
+"""AURA SDK Digital Twin timeline.
+"""
 
 class Timeline:
     """Placeholder implementation for aura_sdk.digital_twin.timeline."""

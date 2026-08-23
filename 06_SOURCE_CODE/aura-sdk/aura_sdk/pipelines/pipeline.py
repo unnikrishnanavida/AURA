@@ -1,4 +1,5 @@
-AURA SDK Pipelines pipeline.
+"""AURA SDK Pipelines pipeline.
+"""
 
 class Pipeline:
     """Placeholder implementation for aura_sdk.pipelines.pipeline."""

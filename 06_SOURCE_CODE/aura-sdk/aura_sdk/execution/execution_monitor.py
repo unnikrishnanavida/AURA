@@ -1,4 +1,5 @@
-AURA SDK Execution execution_monitor.
+"""AURA SDK Execution execution_monitor.
+"""
 
 class ExecutionMonitor:
     """Placeholder implementation for aura_sdk.execution.execution_monitor."""

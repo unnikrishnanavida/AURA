@@ -1,4 +1,5 @@
-AURA SDK Models attachment.
+"""AURA SDK Models attachment.
+"""
 
 class Attachment:
     """Placeholder implementation for aura_sdk.models.attachment."""

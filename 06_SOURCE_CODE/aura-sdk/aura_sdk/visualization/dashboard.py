@@ -1,4 +1,5 @@
-AURA SDK Visualization dashboard.
+"""AURA SDK Visualization dashboard.
+"""
 
 class Dashboard:
     """Placeholder implementation for aura_sdk.visualization.dashboard."""

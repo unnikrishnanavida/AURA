@@ -1,4 +1,5 @@
-AURA SDK Sandbox cleanup.
+"""AURA SDK Sandbox cleanup.
+"""
 
 class Cleanup:
     """Placeholder implementation for aura_sdk.sandbox.cleanup."""

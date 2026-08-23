@@ -1,4 +1,5 @@
-AURA SDK Visualization pipeline_renderer.
+"""AURA SDK Visualization pipeline_renderer.
+"""
 
 class PipelineRenderer:
     """Placeholder implementation for aura_sdk.visualization.pipeline_renderer."""

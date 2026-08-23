@@ -1,4 +1,5 @@
-AURA SDK Diagnostics system_report.
+"""AURA SDK Diagnostics system_report.
+"""
 
 class SystemReport:
     """Placeholder implementation for aura_sdk.diagnostics.system_report."""

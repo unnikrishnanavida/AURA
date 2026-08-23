@@ -1,4 +1,5 @@
-AURA SDK Marketplace updater.
+"""AURA SDK Marketplace updater.
+"""
 
 class Updater:
     """Placeholder implementation for aura_sdk.marketplace.updater."""

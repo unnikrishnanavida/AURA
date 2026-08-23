@@ -1,4 +1,5 @@
-AURA SDK Discovery/ Internal parser.
+"""AURA SDK Discovery/ Internal parser.
+"""
 
 class Parser:
     """Placeholder implementation for aura_sdk.discovery/_internal.parser."""
