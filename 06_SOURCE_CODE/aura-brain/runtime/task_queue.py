@@ -1,4 +1,4 @@
-﻿from queue import PriorityQueue
+from queue import PriorityQueue
 
 from .task import Task
 

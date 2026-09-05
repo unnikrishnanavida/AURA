@@ -1,0 +1,3 @@
+from typing import Protocol
+class RetrievalAdapter(Protocol):
+    def search(self, query: str): ...

@@ -4,11 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aura-execution"
-version = "0.1.0"
-description = "Domain-specific execution engine for AURA"
-requires-python = ">=3.10"
+version = "0.2.0"
+description = "Domain execution engine for AURA (lifecycle, gates, runtime guarantees)"
+requires-python = ">=3.11"
 dependencies = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.setuptools.packages.find]
+where = ["src"]

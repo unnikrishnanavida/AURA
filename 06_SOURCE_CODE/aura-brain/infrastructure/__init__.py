@@ -1,4 +1,4 @@
-﻿"""Infrastructure-layer skeletons for external integrations and adapters."""
+"""Infrastructure-layer skeletons for external integrations and adapters."""
 
 from .base import InfrastructureAdapter
 from .adapters.ai_provider_adapter import AIProviderAdapter

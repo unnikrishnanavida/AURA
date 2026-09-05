@@ -1,0 +1,1 @@
+"""Reference HTTP adapter application for aura-api."""

@@ -1,0 +1,1 @@
+"""Reflective analysis components (outcome evaluation, assumptions)."""

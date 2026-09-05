@@ -1,4 +1,18 @@
-__pycache__/
+﻿__pycache__/
 *.pyc
 *.log
 .env
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+node_modules/
+
+# local artifacts
+.spec_check.txt
+.venv_pip_list.txt
+.venv_site.txt
+06_SOURCE_CODE.zip

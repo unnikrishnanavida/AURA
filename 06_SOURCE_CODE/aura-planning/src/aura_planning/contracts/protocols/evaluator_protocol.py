@@ -1,0 +1,3 @@
+from typing import Protocol
+class EvaluatorProtocol(Protocol):
+    def evaluate(self,plan): ...

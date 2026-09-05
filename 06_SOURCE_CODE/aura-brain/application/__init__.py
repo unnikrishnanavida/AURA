@@ -1,4 +1,4 @@
-﻿"""Application-layer abstractions for orchestration and composition."""
+"""Application-layer abstractions for orchestration and composition."""
 
 from .composition_root import CompositionRoot, DependencyContainer
 from .dependency_container import DependencyContainer as ServiceContainer

@@ -1,4 +1,4 @@
-﻿"""Tests for goals, autonomy, budgets, and recovery."""
+"""Tests for goals, autonomy, budgets, and recovery."""
 
 from __future__ import annotations
 

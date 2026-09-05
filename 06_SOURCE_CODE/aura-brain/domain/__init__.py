@@ -1,4 +1,4 @@
-﻿"""Domain-layer skeletons that express core business concepts cleanly."""
+"""Domain-layer skeletons that express core business concepts cleanly."""
 
 from .agent import AgentDescriptor, AgentExecutionPlan
 from .base import AggregateRoot, DomainEvent, Entity, ValueObject

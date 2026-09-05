@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aura"
+version = "0.2.0"
+description = "Autonomous Universal Reasoning Architecture — a coherent, integrated intelligence infrastructure"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "AURA Project" }]
+keywords = ["ai", "reasoning", "memory", "agents", "intelligence", "planning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+agents = ["aura-agents>=0.1"]
+cli = ["typer>=0.9"]  # reserved; CLI uses stdlib argparse
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.8",
+    "ruff>=0.4",
+    "types-PyYAML>=6.0",
+]
+build = ["build>=1.0"]
+
+[project.scripts]
+aura = "aura.cli.main:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["aura*"]
+
+[tool.setuptools.package-data]
+aura = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+exclude = ["build/", "dist/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = ["pydantic.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+"src/aura/cli/*" = ["S101"]

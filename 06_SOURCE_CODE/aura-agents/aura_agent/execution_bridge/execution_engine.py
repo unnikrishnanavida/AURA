@@ -1,4 +1,4 @@
-﻿"""Execution engine: orchestrates the guarded execution pipeline.
+"""Execution engine: orchestrates the guarded execution pipeline.
 
 Pipeline per execution:
 

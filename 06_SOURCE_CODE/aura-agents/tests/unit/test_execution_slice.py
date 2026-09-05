@@ -1,4 +1,4 @@
-﻿"""Integration test: the guarded execution vertical slice.
+"""Integration test: the guarded execution vertical slice.
 
 Coverage: successful execution, missing capability, permission denied,
 approval required, safety denial, budget exhaustion, tool failure, timeout --

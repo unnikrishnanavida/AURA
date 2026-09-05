@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class PlatformBridge(Protocol):
+ def secure_get(self,key:str):...
+ def secure_put(self,key:str,value:str):...

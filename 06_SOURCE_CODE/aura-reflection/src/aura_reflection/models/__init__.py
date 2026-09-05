@@ -1,0 +1,1 @@
+"""Reflection domain models: request/outcome and result/signals."""

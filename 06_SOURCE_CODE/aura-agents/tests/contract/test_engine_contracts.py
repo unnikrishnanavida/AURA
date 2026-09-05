@@ -1,4 +1,4 @@
-﻿"""AURA cross-engine contract tests.
+"""AURA cross-engine contract tests.
 
 These validate the boundaries the Agent engine exposes to other AURA engines
 (Core, Reasoning, Memory, Learning, SDK). Because sibling engines may not be

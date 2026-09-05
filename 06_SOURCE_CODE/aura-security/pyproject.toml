@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aura-security"
+version = "0.1.0"
+description = "AURA Security subsystem: adaptive defense, threat assessment, guarded remediation lifecycle"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "AURA" }]
+keywords = ["aura", "security", "adaptive-defense", "threat", "remediation"]
+
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+exclude = ["Tests/", "Adaptive-Defense/"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP", "S", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/aura_security/models/*.py" = ["UP042", "S105"]

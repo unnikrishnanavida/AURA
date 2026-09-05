@@ -1,4 +1,4 @@
-﻿class RuntimeError(Exception):
+class RuntimeError(Exception):
     """Base runtime exception."""
 
 

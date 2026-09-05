@@ -1,1 +1,1 @@
-﻿"""Adapter package for infrastructure-specific integration skeletons."""
+"""Adapter package for infrastructure-specific integration skeletons."""

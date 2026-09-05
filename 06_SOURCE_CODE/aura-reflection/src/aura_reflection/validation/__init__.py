@@ -1,0 +1,1 @@
+"""Validation boundary for reflection output."""

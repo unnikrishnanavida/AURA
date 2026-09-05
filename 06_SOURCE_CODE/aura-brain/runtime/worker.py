@@ -1,4 +1,4 @@
-﻿"""
+"""
 AURA Runtime Worker
 """
 

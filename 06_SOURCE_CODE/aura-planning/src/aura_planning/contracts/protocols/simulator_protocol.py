@@ -1,0 +1,3 @@
+from typing import Protocol
+class SimulatorProtocol(Protocol):
+    def simulate(self,request): ...

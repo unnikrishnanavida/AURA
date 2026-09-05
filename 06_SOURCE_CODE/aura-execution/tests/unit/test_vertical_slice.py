@@ -22,7 +22,7 @@ def test_missing_capability():
     assert r.status==ExecutionStatus.BLOCKED
 
 def test_high_risk_review():
-    o,a=make(); a=ExecutableAction("r","r","filesystem.write",risk=.8,handler=lambda i,c:None)
+    o,a=make(); a=ExecutableAction("r","write","filesystem.write",risk=.8,handler=lambda i,c:None)
     r=o.execute(ExecutionRequest(a,approved=False))
     assert r.status==ExecutionStatus.REVIEW
 

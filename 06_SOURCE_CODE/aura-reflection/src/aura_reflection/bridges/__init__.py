@@ -1,0 +1,1 @@
+"""Bridges from reflection to learning and memory (authorization-gated)."""

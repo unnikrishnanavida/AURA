@@ -1,0 +1,33 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+wheeltest/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Secrets — never commit
+*.pem
+*.key
+*.jks
+credentials*
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

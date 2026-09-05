@@ -1,0 +1,3 @@
+# Configuration
+
+Implementation documentation pending.
