@@ -10,12 +10,12 @@ from __future__ import annotations
 
 import time
 
+from aura.core.pipeline import default_guardrails
 from aura.execution.engine import ExecutionEngine, ExecutionRequest
-from aura.execution.models import ActionSpec, ActionResult, WorldState, make_result
+from aura.execution.models import ActionResult, ActionSpec, WorldState, make_result
 from aura.execution.registry import ActionRegistry
 from aura.foundation.cancellation import CancellationToken, CancellationTokenSource
 from aura.foundation.ids import ExecutionId
-from aura.core.pipeline import default_guardrails
 
 
 def build_engine() -> tuple[ExecutionEngine, ActionRegistry]:
@@ -125,7 +125,7 @@ def test_idempotent_replay_is_deduplicated() -> None:
     assert calls["n"] == 1  # handler ran exactly once
 def test_failure_is_observable_via_recorder() -> None:
     from aura.brain.engine import BrainEngine
-    from aura.core.pipeline import ExecutionPipeline, default_guardrails, PipelineRequest
+    from aura.core.pipeline import ExecutionPipeline, PipelineRequest, default_guardrails
     from aura.planning.models import Goal, Task
     from aura.security.permissions import Identity
 

@@ -123,6 +123,19 @@ branch volume and 3 empty modules confirm non-functional generation.
 | feedback → policy improvement | Superseded by canonical + newly implemented loop | `aura/learning` |
 | calibrated uncertainty / claim statuses | Superseded by canonical | `aura/reasoning/uncertainty.py`, `aura/research/models.py` |
 
+## Additional scaffolds: `aura-brain`, `aura-execution-complete`
+
+`aura-brain` is a non-valid TOML scaffold (no build-system or package layout);
+the canonical brain engine lives at `aura/src/aura/brain/`. The canonical
+`aura.brain.BrainEngine` is the authoritative cognitive orchestrator.
+`aura-execution-complete` contains a minimal smoke-suite and is superseded by
+`aura/src/aura/execution/`. Both are archived/historical artifacts.
+
+| Repo                   | Status                          | Canonical owner               |
+| ---------------------- | ------------------------------- | ----------------------------- |
+| `aura-brain`           | obsolete scaffold (invalid TOML)| `aura/src/aura/brain/`        |
+| `aura-execution-complete` | historical scaffold        | `aura/src/aura/execution/`    |
+
 ## Outcome
 
 No historical code was migrated into the canonical runtime. Where the mission

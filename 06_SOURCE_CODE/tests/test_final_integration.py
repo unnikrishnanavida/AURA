@@ -31,7 +31,7 @@ from pathlib import Path
 
 import pytest
 
-_REPO = Path(__file__).resolve().parents[2]
+_REPO = Path(__file__).resolve().parents[1]  # 06_SOURCE_CODE
 
 
 def _add_srcs() -> None:
