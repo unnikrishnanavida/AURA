@@ -1,75 +1,49 @@
-# React + TypeScript + Vite
+# aura-web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A real web client for the canonical AURA API. Every value displayed is fetched
+live from a running `aura-api` server; no demo data or hardcoded dashboard
+metrics are injected anywhere.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Status** — live `/health`, `/ready`, `/v1/metrics` (real counters/gauges/latency)
+- **Reasoning console** — ask questions against `/v1/reason`, see the structured answer
+- **Memory** — write (`/v1/remember`) and search (`/v1/recall`) memory records
+- **Knowledge** — add claims (`/v1/observe`) and retrieve them (`/v1/retrieve`)
+- **Research** — run an evidence-aware research cycle (`/v1/research`)
+- **Audit** — security/decision events from the canonical audit log (`/v1/audit`)
+- **Settings** — configure endpoint and optional API key
 
-## React Compiler
+## Security
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- The API key is stored only in `sessionStorage`, never in `localStorage`, and
+  is cleared when the tab closes. It is never logged or rendered.
+- Requests carry an `Authorization: Bearer` header only when a key is set.
+- Timeouts and bounded retries apply to every request; server-side secret
+  redaction is enforced server-side by `aura-api`.
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev     # vite dev server (proxy to AURA API via the endpoint setting)
+npm run build   # tsc -b && vite build
+npm run lint    # eslint
+npm test        # vitest (jsdom)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Point a server at `http://127.0.0.1:8765` (the default):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+cd ../aura && python -m aura.api.server
 ```
+
+Then open the Vite dev URL and use the **Settings** tab to connect if your
+server uses a different endpoint or an API key.
+
+## Architecture
+
+`src/lib/api.ts` is the typed API client (fetch, timeout, retry, typed errors).
+`src/lib/settings.tsx` + `settings-context.ts` hold endpoint/key state with the
+secure storage strategy. Pages are thin components over the API client, and
+every render path consumes live API data.

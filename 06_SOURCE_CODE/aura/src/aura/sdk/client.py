@@ -143,6 +143,48 @@ class Aura:
         self._brain.knowledge.add(claim)
         return str(claim.id)
 
+    def retrieve(
+        self, *, predicate: tuple[str, ...] = (), statement: str = "", limit: int = 10
+    ) -> list[dict[str, object]]:
+        results = self._brain.knowledge.retrieve(predicate=predicate, statement=statement, limit=limit)
+        return [
+            {
+                "claim_id": str(claim.id),
+                "statement": claim.statement,
+                "predicate": list(claim.predicate),
+                "status": claim.status.value,
+                "confidence": claim.confidence,
+                "trust": round(trust.get("trust", 0.0), 6) if isinstance(trust, dict) else trust,
+            }
+            for claim, trust in results
+        ]
+
+    # -- research ---------------------------------------------------------------
+    def research(
+        self,
+        question: str,
+        *,
+        claims: tuple[str, ...] = (),
+        evidence: dict[str, tuple[float, str, float]] | None = None,
+    ) -> dict[str, object]:
+        """Run an evidence-aware research cycle and return the structured output."""
+        from aura.research.engine import ResearchEngine
+        from aura.research.models import ResearchInput, ResearchQuestion, SourceQuality
+
+        quality: dict[str, object] = {"primary": SourceQuality.PRIMARY, "secondary": SourceQuality.SECONDARY,
+                                      "tertiary": SourceQuality.TERTIARY, "unknown": SourceQuality.UNKNOWN}
+        mapped_evidence: dict[str, tuple[float, object, float]] = {}
+        for claim_text, (strength, source, freshness) in (evidence or {}).items():
+            mapped_evidence[claim_text] = (strength, quality.get(source, SourceQuality.UNKNOWN), freshness)
+        output = ResearchEngine().research(
+            ResearchInput(
+                question=ResearchQuestion.create(question),
+                claims=claims,
+                evidence=mapped_evidence,  # type: ignore[arg-type]
+            )
+        )
+        return output.to_dict()
+
     # -- observability -----------------------------------------------------------
     def replay(self, execution_id: str) -> dict[str, Any]:
         from aura.observability.replay import ReplayEngine
