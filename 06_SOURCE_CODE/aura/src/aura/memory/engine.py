@@ -100,6 +100,20 @@ class MemoryEngine:
     def forget(self, memory_id: MemoryId) -> None:
         self.store.delete(memory_id)
 
+    def archive(self, memory_id: MemoryId) -> MemoryEntry:
+        """Move a live record into the archive (retention), switching status."""
+        from aura.memory.models import MemoryStatus
+
+        entry = self.by_id(memory_id)
+        if entry.status is not MemoryStatus.ACTIVE:
+            raise ValueError(f"only ACTIVE records can be archived, got {entry.status.value}")
+        self.store.archive(entry)
+        return entry
+
+    def restore(self, memory_id: MemoryId) -> MemoryEntry:
+        """Restore an archived record back into the live store."""
+        return self.store.restore(memory_id)
+
     def link(self, source: MemoryId, target: MemoryId, kind: LinkKind) -> None:
         from_entry = self.store.get(source)
         to_entry = self.store.get(target)
@@ -149,7 +163,11 @@ class MemoryEngine:
         return ReplayToMemory(self.store, clock=self._clock).ingest_execution(recorder, execution_id)  # type: ignore[arg-type]
 
     def health(self) -> dict[str, object]:
-        return {"status": "ok", "entries": self.store.count()}
+        return {
+            "status": "ok",
+            "entries": self.store.count(),
+            "backend": type(self.store).__name__,
+        }
 
 
 __all__ = ["MemoryEngine", "MemoryQuery"]

@@ -33,6 +33,7 @@ guardrail gate; it never touches the filesystem, network, or subprocesses.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -42,7 +43,7 @@ from urllib.parse import urlparse
 from aura.core.pipeline import ExecutionPipeline
 from aura.execution.models import ActionResult, ActionSpec, make_result
 from aura.foundation.cancellation import CancellationToken
-from aura.foundation.errors import AuraError
+from aura.foundation.errors import AuraError, ConfigurationError
 from aura.foundation.ids import CorrelationId
 from aura.observability.logging import StructuredLogger
 from aura.sdk.client import Aura
@@ -145,8 +146,11 @@ class AuraApiServer:
         aura: Aura | None = None,
         config: ServerConfig | None = None,
         audit_log: AuditLog | None = None,
+        aura_config: Any | None = None,
     ) -> None:
-        self.aura = aura or Aura()
+        if aura is None:
+            aura = Aura(config=aura_config) if aura_config is not None else Aura()
+        self.aura = aura
         self.config = config or ServerConfig()
         self.audit = audit_log or AuditLog()
         self.sessions: dict[str, dict[str, object]] = {}
@@ -582,7 +586,25 @@ class AuraApiServer:
 
 
 def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
-    AuraApiServer(config=ServerConfig(host=host, port=port)).run()
+    """Run the API server.
+
+    Configuration is loaded from layered sources (env/file); ``AURA_ENVIRONMENT``
+    and ``AURA_STORAGE_BACKEND`` are honored. Environment variables that mismatch
+    production defaults are validated with the canonical config loader.
+    """
+    from aura.config.loader import ConfigLoader
+
+    config = ConfigLoader().load()
+    # Only bind production-mode enforcement if the environment is explicitly set.
+    if os.environ.get("AURA_ENVIRONMENT") == "production" and config.storage.backend == "memory":
+        raise ConfigurationError(
+            "production run requires storage.backend = 'sqlite' (or 'postgresql'); "
+            "refusing to serve with in-memory storage"
+        )
+    AuraApiServer(
+        config=ServerConfig(host=host, port=port),
+        aura_config=config,
+    ).run()
 
 
 if __name__ == "__main__":

@@ -36,8 +36,17 @@ def test_loader_overrides() -> None:
 
 
 def test_load_settings() -> None:
-    config = load_settings(environment="production")
+    config = load_settings(
+        environment="production",
+        overrides={"storage": {"backend": "sqlite", "sqlite_path": ":memory:"}},
+    )
     assert config.environment is Environments.PRODUCTION
+    assert config.storage.backend == "sqlite"
+
+
+def test_production_rejects_in_memory_storage() -> None:
+    with pytest.raises(ConfigurationError):
+        load_settings(environment="production")
 
 
 def test_nested_section_override() -> None:

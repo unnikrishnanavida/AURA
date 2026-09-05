@@ -106,3 +106,57 @@ def test_replay_endpoint(port: int, server: AuraApiServer) -> None:
     status, body = _get(port, f"/v1/replay/{execution_id}")
     assert status == 200
     assert body["events"]
+
+
+def test_sqlite_backed_api_persists_across_server_restart(tmp_path: object) -> None:
+    """A memory written through the API survives a full server-round restart."""
+    from pathlib import Path
+
+    from aura.config.settings import AuraConfig, Environments, StorageConfig
+    from aura.foundation.clock import ManualClock
+
+    db_path = Path(tmp_path) / "api.sqlite3"  # type: ignore[arg-type]
+    cfg = AuraConfig(
+        storage=StorageConfig(backend="sqlite", sqlite_path=str(db_path)),
+        environment=Environments.DEV,
+    )
+    server_one = AuraApiServer(
+        aura=Aura(clock=ManualClock(0), config=cfg),
+        config=ServerConfig(host="127.0.0.1", port=0),
+    )
+    port_one = _start(server_one)
+    status, body = _post(port_one, "/v1/remember", {"key": "persistent", "content": {"v": 7}})
+    assert status == 200
+    memory_id = body["memory_id"]
+    assert memory_id
+    server_one._httpd.shutdown()  # type: ignore[attr-defined]
+    server_one._httpd.server_close()  # type: ignore[attr-defined]
+    server_one.aura.brain.memory.store.close()  # type: ignore[attr-defined]
+
+    # Simulate process restart: a brand-new server over the same file.
+    server_two = AuraApiServer(
+        aura=Aura(clock=ManualClock(0), config=cfg),
+        config=ServerConfig(host="127.0.0.1", port=0),
+    )
+    port_two = _start(server_two)
+    status, body = _post(port_two, "/v1/recall", {"text": "persistent", "limit": 10})
+    assert status == 200
+    assert any(entry["key"] == "persistent" for entry in body["entries"])
+
+
+def test_api_with_sqlite_migrations_on_open() -> None:
+    """AuraApiServer with an sqlite-backed Aura applies migrations at startup."""
+    import tempfile
+
+    from aura.config.settings import AuraConfig, StorageConfig
+
+    tmp = tempfile.mkdtemp()
+    db_file = f"{tmp}/mig.sqlite3"
+    cfg = AuraConfig(storage=StorageConfig(backend="sqlite", sqlite_path=db_file))
+    api = AuraApiServer(aura=Aura(config=cfg))
+    health = api.aura.health()
+    assert health["status"] == "ok"
+    assert "SQLiteMemoryStore" in str(health["engines"]["memory"]["backend"])
+    # close the underlying file to release the lock
+    store = api.aura.brain.memory.store
+    store.close()  # type: ignore[attr-defined]

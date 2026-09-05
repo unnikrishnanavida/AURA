@@ -52,6 +52,35 @@ class EngineConfig(BaseModel):
     max_reasoning_steps: int = Field(default=100, ge=1)
 
 
+class StorageConfig(BaseModel):
+    """Persistence backend for AURA domain data.
+
+    ``backend`` selects the storage engine:
+
+    - ``memory`` (development default) — no persistence across process restarts
+    - ``sqlite`` — local file-backed store with WAL, migrations, transactions
+    - ``postgresql`` — reserved; the same :class:`MemoryStore` interface and row
+      format apply, but no driver is bundled (PostgreSQL is never a mandatory
+      local dependency).
+
+    Production configuration must not silently fall back to in-memory storage:
+    :class:`AuraConfig` rejects ``backend=memory`` in the production environment.
+    """
+
+    backend: str = Field(default="memory")
+    sqlite_path: str = Field(default="data/aura.sqlite3")
+    run_migrations: bool = True
+    integrity_check_on_open: bool = True
+
+    @field_validator("backend")
+    @classmethod
+    def _validate_backend(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"memory", "sqlite", "postgresql"}:
+            raise ValueError(f"unknown storage backend {value!r}; expected memory|sqlite|postgresql")
+        return normalized
+
+
 class AuraConfig(BaseModel):
     """Root configuration object. Loaded and validated by :class:`ConfigLoader`."""
 
@@ -61,6 +90,7 @@ class AuraConfig(BaseModel):
     budgets: BudgetLimits = Field(default_factory=BudgetLimits)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     engines: EngineConfig = Field(default_factory=EngineConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
     provider_api_key: SecretStr | None = None
     secrets: dict[str, SecretStr] = Field(default_factory=dict)
 
@@ -75,6 +105,11 @@ class AuraConfig(BaseModel):
     def _schema_check(self) -> AuraConfig:
         if self.schema_version != ConfigSchemaVersion.V1:
             raise ValueError(f"unsupported config schema version: {self.schema_version}")
+        if self.environment is Environments.PRODUCTION and self.storage.backend == "memory":
+            raise ValueError(
+                "production environment requires a persistent storage backend "
+                "(storage.backend = 'sqlite' or 'postgresql'); refusing unsafe in-memory fallback"
+            )
         return self
 
     def model_dump_safe(self) -> dict[str, object]:
@@ -85,4 +120,12 @@ class AuraConfig(BaseModel):
         return dumped
 
 
-__all__ = ["AuraConfig", "BudgetLimits", "ConfigSchemaVersion", "EngineConfig", "Environments", "LoggingConfig"]
+__all__ = [
+    "AuraConfig",
+    "BudgetLimits",
+    "ConfigSchemaVersion",
+    "EngineConfig",
+    "Environments",
+    "LoggingConfig",
+    "StorageConfig",
+]

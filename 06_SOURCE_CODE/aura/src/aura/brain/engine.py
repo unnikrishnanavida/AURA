@@ -98,13 +98,16 @@ class BrainEngine:
         config: AuraConfig | None = None,
         clock: Clock | None = None,
         seed: int | None = None,
+        memory_store: Any | None = None,
     ) -> BrainEngine:
+        from aura.memory.engine import MemoryEngine
         from aura.observability.logging import get_logger
 
         cfg = config or AuraConfig()
         clk = clock or SystemClock()
+        store = memory_store if memory_store is not None else _memory_store_from_config(cfg, clk)
         return cls(
-            memory=MemoryEngine(),
+            memory=MemoryEngine(store=store, clock=clk),
             knowledge=KnowledgeBase(),
             reasoning=ReasoningEngine(seed=seed if seed is not None else cfg.engines.reasoning_seed),
             planning=PlanningEngine(),
@@ -277,6 +280,13 @@ class BrainEngine:
         for i, event in enumerate(events):
             if i > 0:
                 event.payload.setdefault("caused_by", [str(events[i - 1].event_id)])
+
+
+def _memory_store_from_config(cfg: AuraConfig, clk: Any) -> Any:
+    """Build the memory store from validated configuration (always memory-safe)."""
+    from aura.memory.factory import create_memory_store
+
+    return create_memory_store(cfg, clock=clk)
 
 
 Brain = BrainEngine

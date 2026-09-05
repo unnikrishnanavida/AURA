@@ -13,6 +13,8 @@ COPY src ./src
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir . \
  && addgroup --system aura && adduser --system --ingroup aura aura \
+ && mkdir -p /data /app/data \
+ && chown -R aura:aura /data /app/data \
  && rm -rf /root/.cache
 
 USER aura

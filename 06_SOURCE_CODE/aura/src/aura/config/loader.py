@@ -123,16 +123,23 @@ def load_settings(
     config_path: str | Path | None = None,
     overrides: dict[str, Any] | None = None,
 ) -> AuraConfig:
-    """Convenience loader producing validated settings."""
+    """Convenience loader producing validated settings.
+
+    Defaults are merged from a development-safe base, then environment,
+    file, and overrides are applied before a single validation pass — so a
+    production config is validated as a whole (never rejected mid-build).
+    """
     validate_environment(environment)
-    env = _coerce_scalars(environment)
-    defaults = AuraConfig(environment=env)
-    raw: dict[str, Any] = defaults.model_dump()
+    raw: dict[str, Any] = AuraConfig().model_dump()
+    raw["environment"] = _coerce_scalars(environment)
     if config_path:
         raw.update(ConfigLoader._read_file(Path(config_path)))
     if overrides:
         raw.update(_coerce_scalars(overrides))
-    return AuraConfig.model_validate(raw)
+    try:
+        return AuraConfig.model_validate(raw)
+    except Exception as exc:  # pydantic ValidationError
+        raise ConfigurationError(f"invalid configuration: {exc}") from exc
 
 
 __all__ = ["ConfigLoader", "load_settings", "validate_environment"]

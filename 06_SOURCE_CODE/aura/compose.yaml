@@ -1,8 +1,8 @@
-# AURA local development environment
+# AURA local development environment with persistent SQLite storage.
 #
-# The API is stateless by default (in-memory stores) so a single service
-# runs standalone. Persistent backing services (PostgreSQL/Redis) are
-# deliberately not required yet — see docs/ for the persistence roadmap.
+# Production uses a persistent backend; this compose defaults to SQLite so the
+# development experience matches production semantics (survives container
+# restarts via the bind-mounted volume).
 
 services:
   aura-api:
@@ -13,8 +13,12 @@ services:
     environment:
       AURA_ENVIRONMENT: development
       AURA_INSTANCE_ID: compose-dev
+      AURA_STORAGE_BACKEND: sqlite
+      AURA_STORAGE_SQLITE_PATH: /data/aura.sqlite3
     ports:
       - "8765:8765"
+    volumes:
+      - aura-data:/data
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=3)"]
       interval: 15s
@@ -22,3 +26,6 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+
+volumes:
+  aura-data:

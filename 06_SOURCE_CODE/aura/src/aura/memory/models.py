@@ -27,12 +27,15 @@ class MemoryStatus(StrEnum):
     """Explicit lifecycle state of a memory record.
 
     :attr:`ACTIVE` records are retrievable. :attr:`SUPERSEDED` records were
-    replaced by a newer version and are kept only for provenance. :attr:`DELETED`
-    and :attr:`EXPIRED` are terminal states surfaced by the store/lifecycle layer.
+    replaced by a newer version and are kept only for provenance. :attr:`ARCHIVED`
+    records are moved out of the live store for retention and can be restored on
+    demand. :attr:`DELETED` and :attr:`EXPIRED` are terminal states surfaced by
+    the store/lifecycle layer.
     """
 
     ACTIVE = "active"
     SUPERSEDED = "superseded"
+    ARCHIVED = "archived"
     DELETED = "deleted"
     EXPIRED = "expired"
 
