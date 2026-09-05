@@ -14,9 +14,13 @@ from aura.memory.models import (
     LinkKind,
     MemoryConfidence,
     MemoryEntry,
+    MemoryStatus,
     MemoryType,
     Provenance,
+    RetentionPolicy,
+    Sensitivity,
 )
+from aura.memory.policy import MemoryLifecycle, MemoryPolicy
 from aura.memory.retrieval import RetrievalScorer
 from aura.memory.store import InMemoryMemoryStore, MemoryStore
 
@@ -29,9 +33,14 @@ __all__ = [
     "MemoryEngine",
     "MemoryEntry",
     "MemoryGraph",
+    "MemoryLifecycle",
+    "MemoryPolicy",
     "MemoryQuery",
+    "MemoryStatus",
     "MemoryStore",
     "MemoryType",
     "Provenance",
+    "RetentionPolicy",
     "RetrievalScorer",
+    "Sensitivity",
 ]

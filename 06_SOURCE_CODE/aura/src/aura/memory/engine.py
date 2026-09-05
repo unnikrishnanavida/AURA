@@ -15,7 +15,15 @@ from aura.foundation.clock import Clock, SystemClock
 from aura.foundation.ids import ExecutionId, MemoryId
 from aura.memory.consolidation import Consolidator, ForgettingPolicy
 from aura.memory.graph import MemoryGraph
-from aura.memory.models import LinkKind, MemoryConfidence, MemoryEntry, MemoryType, Provenance
+from aura.memory.models import (
+    LinkKind,
+    MemoryConfidence,
+    MemoryEntry,
+    MemoryType,
+    Provenance,
+    RetentionPolicy,
+    Sensitivity,
+)
 from aura.memory.retrieval import RetrievalScorer
 from aura.memory.store import InMemoryMemoryStore, MemoryStore
 
@@ -62,6 +70,9 @@ class MemoryEngine:
         provenance: Provenance | None = None,
         tags: tuple[str, ...] = (),
         expires_at: datetime | None = None,
+        sensitivity: Sensitivity = Sensitivity.INTERNAL,
+        observed_at: datetime | None = None,
+        retention: RetentionPolicy | None = None,
     ) -> MemoryEntry:
         entry = MemoryEntry.create(
             key=key,
@@ -73,6 +84,9 @@ class MemoryEngine:
             clock=self._clock,
             expires_at=expires_at,
             tags=tags,
+            sensitivity=sensitivity,
+            observed_at=observed_at,
+            retention=retention,
         )
         self.store.add(entry)
         self.graph.register(entry)

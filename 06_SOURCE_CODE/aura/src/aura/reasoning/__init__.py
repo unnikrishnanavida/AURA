@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from aura.reasoning.abductive import AbductiveStrategy
 from aura.reasoning.analogical import AnalogicalStrategy
+from aura.reasoning.calibration import CalibrationBin, CalibrationTracker
 from aura.reasoning.causal import CausalStrategy
 from aura.reasoning.consensus import ConsensusEngine, ConsensusVerdict
 from aura.reasoning.counterfactual import CounterfactualStrategy
@@ -32,6 +33,8 @@ __all__ = [
     "AnalogicalStrategy",
     "Assumption",
     "BayesianStrategy",
+    "CalibrationBin",
+    "CalibrationTracker",
     "Case",
     "CausalStrategy",
     "Conclusion",
