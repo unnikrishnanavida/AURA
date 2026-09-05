@@ -22,20 +22,28 @@ src/aura/
 ├─ foundation     ids, errors, results, clocks, lifecycle, cancellation, validation
 ├─ config         pydantic-typed, validated, layered (defaults → file → env)
 ├─ core           bootstrap, DI container, component registry, lifecycle mgr, health
+│                 + ExecutionPipeline: canonical end-to-end request flow
 ├─ memory         working / episodic / semantic / procedural + confidence + provenance
+│                 + sensitivity classification, lifecycle status, retention policy,
+│                 + versioned correction, accession/clearance policy, export
 ├─ knowledge      claims, evidence, sources, trust, verification, contradictions
 ├─ reasoning      6 deterministic strategies + consensus + verification, uncertainty-first
+│                 + calibration tracker (predicted vs realized confidence)
 ├─ research       epistemic ledger, claim passports, reproducibility capsules
 ├─ planning       goal decomposition, constraints, risk analysis, plan alternatives
 ├─ reflection     post-execution review, lessons, counterfactuals
 ├─ learning       validated signal gate, versioned registry, rollback, authorization
+│                 + governed learning loop (observe→learn→monitor→rollback)
 ├─ execution      WorldState ⊥ ActionInputs, guardrail pipeline, retry, timeout, idempotency
 ├─ security       capabilities, policies (default deny), safety, autonomy, budgets, guardrails
+│                 + adaptive defense pipeline (evidence → propose → sandbox → approve → canary)
 ├─ observability  structured logs, metrics, flight recorder, provenance graph, replay
 ├─ providers      provider profiles + embedded deterministic provider
 ├─ brain          cognitive orchestration of the whole lifecycle
-├─ sdk            `aura.Aura` public facade
-├─ api            dependency-light HTTP service (health/ready/reason/replay/openapi)
+├─ sdk            `aura.Aura` public facade (reason/plan/reflect/memory/knowledge/research)
+├─ api            dependency-light HTTP service (health/ready/reason/remember/recall/
+│                 observe/retrieve/research/plan/sessions/metrics/audit/provenance/replay/
+│                 pipeline), authentication, audit
 └─ cli            doctor | health | ready | config validate | run | replay | security | audit | version
 ```
 
@@ -97,10 +105,30 @@ aura version           print version
 ## Testing
 
 ```
-python -m pytest tests -q        # 156 unit + integration tests
+python -m pytest tests -q        # 198 unit + integration tests
 python -m ruff check src tests    # lint
 python -m mypy src                # strict typing
 ```
+
+## Integration surface (Phase 5–8)
+
+- **Cross-system request flow:** `aura.core.pipeline.ExecutionPipeline` runs the
+  canonical flow REQUEST → memory → knowledge → research → reasoning →
+  planning → security → execution → observation → verification → reflection →
+  learning signal → memory/knowledge update, with audit and flight-recorder
+  events at every boundary.
+- **SDK:** `aura-sdk` is a real developer client with local (in-process) and
+  HTTP transports, typed errors, retries, sessions, and events.
+- **Web:** `aura-web` is a real API client; every value shown is fetched live
+  from the AURA API (no demo data).
+- **Agents:** `aura-agents` integrates through provider protocols; the canonical
+  memory adapter (`aura_agent.memory_bridge.canonical_adapter`) delegates reads
+  and writes to `aura.memory`.
+- **Adaptive defense:** generated remediation never deploys without evidence,
+  sandbox validation, and an explicit human authorizer (see
+  `aura.security.defense_pipeline`).
+- **Evaluation:** `06_SOURCE_CODE/evaluation/evaluate.py` produces a scored
+  report of real runtime behavior against documented criteria.
 
 ## Key concepts
 

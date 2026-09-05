@@ -68,7 +68,11 @@ def _subjects_overlap(proposition: str, statement: str) -> bool:
 def _opposite_polarity(proposition: str, statement: str) -> bool:
     def negated(text: str) -> bool:
         lowered = text.lower()
-        return any(lowered.startswith(token) or f" {token}" in f" {lowered}" for token in _NEGATIONS)
+        # Only inspect the claim's content, not parenthetical metadata such as
+        # "(prior 0.50, no observations)" — "no observations" is not a
+        # propositional negation of the claim.
+        meat = lowered.split(" (", 1)[0].strip()
+        return any(meat.startswith(token) or f" {token}" in f" {meat}" for token in _NEGATIONS)
 
     return negated(proposition) != negated(statement)
 

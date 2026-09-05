@@ -217,5 +217,39 @@ class MemoryLifecycle:
                 break
         return list(reversed(chain))
 
+    def export(self, *, clearance: int | None = None) -> list[dict[str, object]]:
+        """Export memory records the caller is cleared to see.
+
+        Each exported record excludes private fields that are not meaningful
+        for transfer (``expires_at``, ``retention``) and marks the sensitivity
+        class so the *receiver* can enforce its own policy. Records above the
+        caller's clearance are omitted entirely (default deny).
+        """
+        exported: list[dict[str, object]] = []
+        for entry in self.engine.store.all():
+            if entry.status is not MemoryStatus.ACTIVE:
+                continue
+            decision = self.policy.can_access(entry.sensitivity, clearance)
+            if not decision.allowed:
+                continue
+            exported.append(
+                {
+                    "id": str(entry.id),
+                    "key": entry.key,
+                    "kind": entry.kind.value,
+                    "content": dict(entry.content),
+                    "importance": entry.importance,
+                    "confidence": entry.confidence.combined,
+                    "sensitivity": entry.sensitivity.value,
+                    "provenance": entry.provenance.source,
+                    "created_at": entry.created_at.isoformat() if entry.created_at else None,
+                    "version": entry.version,
+                    "supersedes": str(entry.supersedes) if entry.supersedes else None,
+                    "tags": list(entry.tags),
+                    "links": {k: v.value for k, v in entry.links.items()},
+                }
+            )
+        return exported
+
 
 __all__ = ["AccessDecision", "Correction", "MemoryLifecycle", "MemoryPolicy", "correct_entry"]

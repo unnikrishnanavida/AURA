@@ -133,6 +133,35 @@ def test_lineage_pruning_removes_oldest() -> None:
     assert engine.store.count() == 2
 
 
+def test_export_omits_above_clearance() -> None:
+    engine = make_engine()
+    lifecycle = MemoryLifecycle(engine=engine)
+    engine.remember(
+        key="public-note", kind=MemoryType.SEMANTIC, content={"text": "hello"},
+        sensitivity=Sensitivity.PUBLIC,
+    )
+    engine.remember(
+        key="restricted-note", kind=MemoryType.SEMANTIC, content={"secret": True},
+        sensitivity=Sensitivity.RESTRICTED,
+    )
+    exported = lifecycle.export(clearance=0)
+    # PUBLIC records only; RESTRICTED stays private under default deny.
+    assert len(exported) == 1
+    assert exported[0]["key"] == "public-note"
+    assert exported[0]["sensitivity"] == "public"
+    assert all(record["key"] != "restricted-note" for record in exported)
+
+
+def test_export_with_full_clearance_includes_sensitive() -> None:
+    engine = make_engine()
+    lifecycle = MemoryLifecycle(engine=engine)
+    engine.remember(
+        key="secret-note", kind=MemoryType.EPISODIC, content={"value": 42},
+        sensitivity=Sensitivity.SENSITIVE,
+    )
+    exported = lifecycle.export(clearance=3)
+    assert len(exported) == 1
+    assert exported[0]["sensitivity"] == "sensitive"
 def test_retention_policy_validation() -> None:
     with pytest.raises(ValueError):
         RetentionPolicy(ttl_seconds=0)
