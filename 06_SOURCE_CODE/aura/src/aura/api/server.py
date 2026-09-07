@@ -64,6 +64,7 @@ class ServerConfig:
     api_key: str | None = None
     api_secret: str | None = None
     admin_key: str | None = None
+    trust_proxy: bool = False
     rate_burst: int = 60
     rate_per_second: float = 1.0
     max_request_bytes: int = 1_048_576
@@ -240,6 +241,20 @@ class AuraApiServer:
         }
         return session_id
 
+    def _dependency_health(self) -> dict[str, object]:
+        """Verify the persistence dependency actually works (not just process-alive).
+
+        Runs a real round-trip against the configured memory store so a dead
+        database surfaces as unhealthy instead of a false "healthy".
+        """
+        store = self.aura.brain.memory.store
+        backend = type(store).__name__
+        try:
+            count = store.count()  # forces a real query against the backend
+            return {"ok": True, "backend": backend, "entries": count}
+        except Exception as exc:  # noqa: BLE001 - surface dependency failure
+            return {"ok": False, "backend": backend, "error": str(exc)}
+
     def _handler(self) -> type[BaseHTTPRequestHandler]:
         service = self
 
@@ -253,6 +268,12 @@ class AuraApiServer:
                 self.send_header("Content-Type", "application/json")
                 self.send_header("X-Correlation-Id", str(correlation))
                 self.send_header("Content-Length", str(len(body)))
+                # Security headers: harden the HTTP boundary regardless of TLS
+                # terminator (the reverse proxy is responsible for HTTPS).
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("X-Frame-Options", "DENY")
+                self.send_header("Referrer-Policy", "no-referrer")
+                self.send_header("X-Request-Id", str(correlation))
                 self.end_headers()
                 self.wfile.write(body)
 
@@ -292,12 +313,27 @@ class AuraApiServer:
                         return True
                 return bool(key is None and service._key_issuer is None)
 
-            def _check_rate_limit(self, correlation: CorrelationId) -> bool:
-                ip = self.client_address[0] if self.client_address else "unknown"
+            def _check_rate_limit(self, correlation: CorrelationId, proxied: bool = True) -> bool:
+                ip = self._client_ip(proxied)
                 if not service._rate_limiter.allow(ip):
                     self._error(429, "rate limit exceeded", correlation, "api.rate_limited")
                     return False
                 return True
+
+            def _client_ip(self, proxied: bool = True) -> str:
+                """Source IP with optional trusted-proxy support.
+
+                ``X-Forwarded-For`` is honored only when the server is configured
+                with ``trust_proxy=True`` so a direct connection cannot spoof its
+                rate-limit bucket. Defaults to the socket peer address.
+                """
+                peer = self.client_address[0] if self.client_address else "unknown"
+                if not (proxied and service.config.trust_proxy):
+                    return peer
+                forwarded = self.headers.get("X-Forwarded-For", "")
+                if forwarded:
+                    return forwarded.split(",")[0].strip() or peer
+                return peer
 
             def _require_auth(self, correlation: CorrelationId) -> bool:
                 if not self._authorized(correlation):
@@ -320,15 +356,31 @@ class AuraApiServer:
             def do_GET(self) -> None:
                 correlation = CorrelationId.new()
                 path = urlparse(self.path).path
+                if path == "/liveness":
+                    # Process alive; does not touch dependencies.
+                    self._send(200, {"status": "alive", "service": "aura-api"}, correlation)
+                    return
                 if path == "/health":
-                    self._send(200, {"status": "ok", "service": "aura-api"}, correlation)
+                    health = service.aura.health()
+                    dependency = service._dependency_health()
+                    healthy = health.get("status") == "ok" and dependency.get("ok") is True
+                    self._send(
+                        200 if healthy else 503,
+                        {"status": "ok" if healthy else "unhealthy",
+                         "engines": health.get("engines"),
+                         "dependency": dependency},
+                        correlation,
+                    )
                     return
                 if path == "/ready":
                     health = service.aura.health()
-                    ready = health["status"] == "ok"
+                    dependency = service._dependency_health()
+                    ready = health["status"] == "ok" and dependency.get("ok") is True
                     self._send(
                         200 if ready else 503,
-                        {"status": "ready" if ready else "not_ready", "details": health},
+                        {"status": "ready" if ready else "not_ready",
+                         "details": health,
+                         "dependency": dependency},
                         correlation,
                     )
                     return
@@ -649,19 +701,27 @@ class AuraApiServer:
 def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
     """Run the API server.
 
-    Configuration is loaded from layered sources (env/file); ``AURA_ENVIRONMENT``
-    and ``AURA_STORAGE_BACKEND`` are honored. Environment variables that mismatch
-    production defaults are validated with the canonical config loader.
+    Configuration is loaded from layered sources (env/file); ``AURA_ENVIRONMENT``,
+    ``AURA_CONFIG``, and ``AURA_STORAGE_BACKEND`` are honored. Production-mode
+    gates: persistent backend REQUIRED, issuer secret REQUIRED (>= 16 chars),
+    and the server fails fast with a clear error instead of silently falling
+    back to unsafe defaults.
     """
     from aura.config.loader import ConfigLoader
 
     config = ConfigLoader().load()
-    # Only bind production-mode enforcement if the environment is explicitly set.
-    if os.environ.get("AURA_ENVIRONMENT") == "production" and config.storage.backend == "memory":
-        raise ConfigurationError(
-            "production run requires storage.backend = 'sqlite' (or 'postgresql'); "
-            "refusing to serve with in-memory storage"
-        )
+    if os.environ.get("AURA_ENVIRONMENT") == "production":
+        if config.storage.backend == "memory":
+            raise ConfigurationError(
+                "production run requires storage.backend = 'sqlite' (or 'postgresql'); "
+                "refusing to serve with in-memory storage"
+            )
+        api_secret = os.environ.get("AURA_API_SECRET", "")
+        if not api_secret or len(api_secret) < 16:
+            raise ConfigurationError(
+                "production run requires AURA_API_SECRET (>= 16 characters); "
+                "refusing to serve with a weak or missing issuer secret"
+            )
     AuraApiServer(
         config=ServerConfig(host=host, port=port),
         aura_config=config,

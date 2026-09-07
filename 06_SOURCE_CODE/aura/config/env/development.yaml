@@ -1,0 +1,15 @@
+# AURA LOCAL/DEVELOPMENT configuration (safe defaults; in-memory storage).
+# Copy to development.yaml and commit nothing sensitive. Never used in production.
+environment: development
+instance_id: dev-instance
+
+logging:
+  level: INFO
+  json_format: true
+  redact_secrets: true
+
+storage:
+  backend: memory
+
+engine:
+  reasoning_seed:

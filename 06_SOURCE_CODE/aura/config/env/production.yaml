@@ -1,0 +1,25 @@
+# AURA PRODUCTION configuration.
+# Includes the production safety gates that the config validator enforces:
+#   - storage.backend must NOT be 'memory'
+# The example below uses PostgreSQL in production (interface-only fallback is
+# deliberately rejected by the runtime; use the sqlite backend for single-node
+# deployments until a PG adapter is implemented).
+environment: production
+instance_id: prod-instance
+
+logging:
+  level: INFO
+  json_format: true
+  redact_secrets: true
+
+storage:
+  backend: postgresql
+  run_migrations: true
+  integrity_check_on_open: true
+
+# API security boundaries MUST come from the environment in production.
+# AURA_API_SECRET (>= 16 chars) is required; the API refuses to serve on
+# production without a persistent backend and refuses to run with a weak or
+# missing issuer secret.
+runtime:
+  require_api_secret: true

@@ -1,0 +1,20 @@
+# AURA STAGING configuration.
+# Copy to staging.yaml, set AURA_CONFIG to its absolute path, and fill secrets
+# from the secret store (never commit real values).
+environment: staging
+instance_id: staging-instance
+
+logging:
+  level: INFO
+  json_format: true
+  redact_secrets: true
+
+storage:
+  # Persistent backend required at staging so behavior matches production.
+  backend: sqlite
+  sqlite_path: /data/aura.sqlite3
+  run_migrations: true
+  integrity_check_on_open: true
+
+# Secrets are referenced from the environment (AURA_PROVIDER_API_KEY,
+# AURA_API_SECRET, AURA_ADMIN_KEY). Do not commit values here.
