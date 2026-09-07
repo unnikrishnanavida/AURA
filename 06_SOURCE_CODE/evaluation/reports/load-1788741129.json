@@ -1,0 +1,21 @@
+{
+  "environment": {
+    "machine": "AMD64",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.14.3"
+  },
+  "results": {
+    "duration_seconds": 0.149,
+    "error_count": 0,
+    "error_rate": 0.0,
+    "p50_ms": 1.66,
+    "p95_ms": 54.53,
+    "p99_ms": 73.01,
+    "requests_per_second": 403.68
+  },
+  "workload": {
+    "concurrency": 4,
+    "endpoint": "GET /health",
+    "requests": 60
+  }
+}
