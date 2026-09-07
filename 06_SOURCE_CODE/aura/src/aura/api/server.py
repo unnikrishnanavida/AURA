@@ -62,6 +62,11 @@ class ServerConfig:
     host: str = "127.0.0.1"
     port: int = 8765
     api_key: str | None = None
+    api_secret: str | None = None
+    admin_key: str | None = None
+    rate_burst: int = 60
+    rate_per_second: float = 1.0
+    max_request_bytes: int = 1_048_576
     allow_pipeline: bool = False
     pipeline_actions: tuple[str, ...] = ("echo", "note")
 
@@ -157,6 +162,24 @@ class AuraApiServer:
         self.logger = StructuredLogger("aura.api")
         self._pipeline_cache: ExecutionPipeline | None = None
 
+        # -- security middleware -------------------------------------------
+        from aura.api.security import ApiKeyIssuer, RateLimiter
+
+        self._key_issuer: ApiKeyIssuer | None
+        issuer_secret = self.config.api_secret or os.environ.get("AURA_API_SECRET", "")
+        if self.config.api_key is not None or issuer_secret:
+            self._key_issuer = ApiKeyIssuer(
+                secret=issuer_secret or ("dev-secret-not-for-prod-" + (self.config.api_key or "x")),
+                audit=self.audit,
+            )
+        else:
+            self._key_issuer = None
+        self._rate_limiter = RateLimiter(
+            burst=self.config.rate_burst,
+            per_second=self.config.rate_per_second,
+            audit=self.audit,
+        )
+
     def _pipeline(self) -> ExecutionPipeline:
         """Lazily build the canonical pipeline with safely inert actions only."""
         from aura.core.pipeline import default_guardrails
@@ -246,6 +269,10 @@ class AuraApiServer:
                 length = int(self.headers.get("Content-Length", "0") or 0)
                 if length <= 0:
                     return {}
+                if length > service.config.max_request_bytes:
+                    # respond 413 before reading the body (abuse prevention)
+                    self._error(413, "request body too large", CorrelationId.new(), "api.too_large")
+                    raise _ApiValidation
                 try:
                     data = json.loads(self.rfile.read(length).decode("utf-8"))
                     return data if isinstance(data, dict) else None
@@ -254,10 +281,23 @@ class AuraApiServer:
 
             def _authorized(self, correlation: CorrelationId) -> bool:
                 key = service.config.api_key
-                if key is None:
+                presented = self.headers.get("Authorization", "")
+                if key is not None and presented == f"Bearer {key}":
                     return True
-                expected = f"Bearer {key}"
-                return self.headers.get("Authorization", "") == expected
+                # fall back to the issuer registry (rotatable/expiring keys)
+                if service._key_issuer is not None:
+                    token = presented.removeprefix("Bearer ").strip()
+                    spec = service._key_issuer.validate(token)
+                    if spec is not None:
+                        return True
+                return bool(key is None and service._key_issuer is None)
+
+            def _check_rate_limit(self, correlation: CorrelationId) -> bool:
+                ip = self.client_address[0] if self.client_address else "unknown"
+                if not service._rate_limiter.allow(ip):
+                    self._error(429, "rate limit exceeded", correlation, "api.rate_limited")
+                    return False
+                return True
 
             def _require_auth(self, correlation: CorrelationId) -> bool:
                 if not self._authorized(correlation):
@@ -291,6 +331,8 @@ class AuraApiServer:
                         {"status": "ready" if ready else "not_ready", "details": health},
                         correlation,
                     )
+                    return
+                if not self._check_rate_limit(correlation):
                     return
                 if path.startswith("/v1/replay/"):
                     if not self._require_auth(correlation):
@@ -343,6 +385,9 @@ class AuraApiServer:
             def do_POST(self) -> None:
                 correlation = CorrelationId.new()
                 path = urlparse(self.path).path
+                if path == "/v1/keys":
+                    self._handle_issue_key(self._read_json() or {}, correlation)
+                    return
                 if path not in {
                     "/v1/reason",
                     "/v1/remember",
@@ -360,6 +405,8 @@ class AuraApiServer:
                 # left mid-send when we respond (prevents connection aborts).
                 body = self._read_json()
                 if not self._require_auth(correlation):
+                    return
+                if not self._check_rate_limit(correlation):
                     return
                 if body is None:
                     self._error(400, "request body must be a JSON object", correlation, "api.invalid_json")
@@ -398,6 +445,20 @@ class AuraApiServer:
                 if path == "/v1/pipeline":
                     self._handle_pipeline(body, correlation)
                     return
+
+            def _handle_issue_key(self, body: dict[str, Any], correlation: CorrelationId) -> None:
+                if service._key_issuer is None:
+                    self._error(404, "key issuance not enabled", correlation, "api.disabled")
+                    return
+                if not service.config.admin_key or self.headers.get("Authorization") != f"Bearer {service.config.admin_key}":
+                    self._error(403, "admin authorization required", correlation, "api.forbidden")
+                    return
+                ttl = body.get("ttl_seconds")
+                raw_key, key_id = service._key_issuer.issue(
+                    ttl_seconds=float(ttl) if isinstance(ttl, (int, float)) else None,
+                    scopes=tuple(str(s) for s in body.get("scopes", ("*",))),
+                )
+                self._send(201, {"key_id": key_id, "api_key": raw_key}, correlation)
 
             def _handle_reason(self, body: dict[str, Any], correlation: CorrelationId) -> None:
                 question = body.get("question")
