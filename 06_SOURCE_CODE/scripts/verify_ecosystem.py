@@ -63,34 +63,25 @@ def main() -> int:
 
     python = str(VENV_PYTHON) if VENV_PYTHON.exists() else sys.executable
     code_root = ROOT
+    aura = code_root / "aura"
 
     results: list[tuple[str, bool]] = []
 
-    # 1. canonical runtime
+    # 1. canonical runtime: tests, type check, lint
+    results.append(("aura tests", run("aura tests", aura, [python, "-m", "pytest", "tests/", "-q", "--no-header"])))
+    results.append(("aura mypy", run("aura mypy", aura, [python, "-m", "mypy", "src/aura"])))
+    results.append(("aura ruff", run("aura ruff", aura, [python, "-m", "ruff", "check", "src/aura", "tests", "scripts"])))
+
+    # 2. deployment config validation
     results.append((
-        "canonical aura tests",
-        run("aura tests", code_root / "aura", [str(python), "-m", "pytest", "tests/", "-q", "--no-header"]),
-    ))
-    results.append((
-        "canonical mypy",
-        run("aura mypy", code_root / "aura", [str(python), "-m", "mypy", "src/aura"]),
-    ))
-    results.append((
-        "canonical ruff",
-        run("aura ruff", code_root / "aura", [str(python), "-m", "ruff", "check", "src/aura", "tests"]),
+        "deployment config validator",
+        run("deploy-validator", aura, [python, "scripts/validate_deployment.py", "development"]),
     ))
 
-    # 2. SDK + integration
-    results.append((
-        "aura-sdk tests",
-        run("aura-sdk tests", code_root / "aura-sdk", [str(python), "-m", "pytest", "tests/", "-q", "--no-header"]),
-    ))
-    results.append((
-        "aura-sdk ruff",
-        run("aura-sdk ruff", code_root / "aura-sdk", [str(python), "-m", "ruff", "check", "aura_sdk", "tests"]),
-    ))
+    # 3. SDK + web
+    results.append(("aura-sdk tests", run("aura-sdk tests", code_root / "aura-sdk", [python, "-m", "pytest", "tests/", "-q", "--no-header"])))
+    results.append(("aura-sdk ruff", run("aura-sdk ruff", code_root / "aura-sdk", [python, "-m", "ruff", "check", "aura_sdk", "tests"])))
 
-    # 3. web (build + lint + test)
     npm = "npm.cmd" if platform.system() == "Windows" else "npm"
     results.append(("aura-web build", run("aura-web build", code_root / "aura-web", [npm, "run", "build"])))
     results.append(("aura-web lint", run("aura-web lint", code_root / "aura-web", [npm, "run", "lint"])))
@@ -103,18 +94,30 @@ def main() -> int:
             continue
         results.append((
             f"{repo} tests",
-            run(f"{repo} tests", code_root / repo, [str(python), "-m", "pytest", "tests/", "-q", "--no-header"]),
+            run(f"{repo} tests", code_root / repo, [python, "-m", "pytest", "tests/", "-q", "--no-header"]),
         ))
 
-    # 5. cross-repo integration + evaluation
+    # 5. cross-repo integration, evaluation, and load test (smoke: 50 requests)
     results.append((
         "final integration",
-        run("final integration", code_root, [str(python), "-m", "pytest", "tests/test_final_integration.py", "-q", "--no-header"]),
+        run("final integration", code_root, [python, "-m", "pytest", "tests/test_final_integration.py", "-q", "--no-header"]),
     ))
+    results.append(("evaluation suite", run("evaluation suite", code_root, [python, "evaluation/evaluate.py"])))
     results.append((
-        "evaluation suite",
-        run("evaluation suite", code_root, [str(python), "evaluation/evaluate.py"]),
+        "load test (smoke)",
+        run("load test", code_root, [python, "evaluation/load_test.py", "--requests", "60", "--concurrency", "4"]),
     ))
+
+    # 6. secret scan (no hardcoded credentials in tracked source)
+    secret_cmd = [
+        "git", "grep", "-I", "-n", "-E",
+        r"(api[_-]?key\s*[=:]\s*[\"'][A-Za-z0-9]{16,}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY)",
+        "--", ":!*.lock", ":!*.pyc", ":!06_SOURCE_CODE/aura/tests/*", ":!06_SOURCE_CODE/aura-sdk/tests/*",
+    ]
+    completed = subprocess.run(secret_cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=120)
+    # git grep exits 1 when no match is found (that is the clean state).
+    clean = completed.returncode == 1 and completed.stdout.strip() == ""
+    results.append(("secret scan (no matches)", clean))
 
     passed = sum(1 for _name, ok in results if ok)
     print(f"\n{'=' * 60}")
