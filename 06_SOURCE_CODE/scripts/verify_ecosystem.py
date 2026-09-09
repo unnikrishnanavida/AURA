@@ -58,6 +58,14 @@ def run(step: str, cwd: Path, cmd: list[str]) -> bool:
     return True
 
 
+def _clear_cache(path: Path) -> None:
+    """Remove a possibly corrupted incremental cache dir before type-checking."""
+    import shutil
+
+    if path.is_dir():
+        shutil.rmtree(path, ignore_errors=True)
+
+
 def main() -> int:
     import platform
 
@@ -69,6 +77,7 @@ def main() -> int:
 
     # 1. canonical runtime: tests, type check, lint
     results.append(("aura tests", run("aura tests", aura, [python, "-m", "pytest", "tests/", "-q", "--no-header"])))
+    _clear_cache(aura / ".mypy_cache")
     results.append(("aura mypy", run("aura mypy", aura, [python, "-m", "mypy", "src/aura"])))
     results.append(("aura ruff", run("aura ruff", aura, [python, "-m", "ruff", "check", "src/aura", "tests", "scripts"])))
 
