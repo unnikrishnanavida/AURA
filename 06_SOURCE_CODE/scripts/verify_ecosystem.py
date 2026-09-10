@@ -11,6 +11,7 @@ lint), agents, the Phase 1–4 standalone repos, and the final integration test.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -127,6 +128,35 @@ def main() -> int:
     # git grep exits 1 when no match is found (that is the clean state).
     clean = completed.returncode == 1 and completed.stdout.strip() == ""
     results.append(("secret scan (no matches)", clean))
+
+    # 7. Phase 13-16 production-consistency gates.
+    # TLS proxy tests are self-contained (local certs, no external infra).
+    results.append(("tls proxy tests", run("tls proxy tests", aura, [python, "-m", "pytest", "tests/api/test_tls_proxy.py", "-q", "--no-header"])))
+
+    pg_dsn = os.environ.get("AURA_TEST_POSTGRESQL_DSN", "")
+    pg_enabled = bool(pg_dsn)
+
+    def pg_gated(step: str, label: str, cmd: list[str]) -> None:
+        if not pg_enabled:
+            print(f"\nNOT RUN {label} (AURA_TEST_POSTGRESQL_DSN not set)")
+            results.append((label, True))  # documented skip, not a failure
+            return
+        # Python tests live under the canonical repo (attr `aura`); the topology
+        # E2E script lives under 06_SOURCE_CODE/evaluation (attr `code_root`).
+        results.append((label, run(step, aura, cmd)))
+
+    pg_gated("postgresql store tests", "postgresql store tests", [python, "-m", "pytest", "tests/memory/test_pg_store.py", "-q", "--no-header"])
+    pg_gated("postgresql backup tests", "postgresql backup tests", [python, "-m", "pytest", "tests/observability/test_pg_backup.py", "-q", "--no-header"])
+    pg_gated("distributed state tests", "distributed state tests", [python, "-m", "pytest", "tests/api/test_distributed.py", "-q", "--no-header"])
+    pg_gated("multi-instance api tests", "multi-instance api tests", [python, "-m", "pytest", "tests/api/test_multi_instance.py", "-q", "--no-header"])
+    if pg_enabled:
+        results.append((
+            "production topology e2e",
+            run("production topology e2e", code_root, [python, "evaluation/production_topology_e2e.py"]),
+        ))
+    else:
+        print("\nNOT RUN production topology e2e (AURA_TEST_POSTGRESQL_DSN not set)")
+        results.append(("production topology e2e", True))
 
     passed = sum(1 for _name, ok in results if ok)
     print(f"\n{'=' * 60}")
