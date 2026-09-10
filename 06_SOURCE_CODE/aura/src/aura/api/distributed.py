@@ -29,6 +29,7 @@ eventual for rate-limit cleanup (pruning is best-effort and idempotent).
 
 from __future__ import annotations
 
+import json
 import threading
 import time
 from dataclasses import dataclass
@@ -36,7 +37,7 @@ from typing import Any
 
 from aura.api.security import KeySpec
 from aura.foundation.errors import ConfigurationError
-from aura.security.audit import AuditLog
+from aura.security.audit import AuditLog, AuditRecord
 
 
 def _optional_pool() -> Any:
@@ -247,6 +248,111 @@ class PostgreSQLSessionStore:
                     (now,),
                 )
             return int(cur.rowcount)
+
+
+class PostgreSQLAuditLog(AuditLog):
+    """Shared, durable audit trail stored in PostgreSQL.
+
+    Every record is appended to ``aura_audit_events`` so any API instance can
+    read the complete security-relevant history. Append-only; there is no
+    update/delete path (audit integrity).
+    """
+
+    def __init__(self, state: PostgreSQLStateStore, clock: Any = None) -> None:
+        super().__init__(clock=clock)
+        self._state = state
+        self._fallback_records: list[AuditRecord] = []
+        with self._state.connection() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS aura_audit_events (
+                    id BIGSERIAL PRIMARY KEY,
+                    action TEXT NOT NULL,
+                    actor TEXT NOT NULL,
+                    resource TEXT NOT NULL,
+                    decision TEXT NOT NULL,
+                    reason TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    correlation_id TEXT,
+                    payload TEXT NOT NULL DEFAULT '{}'
+                )
+                """
+            )
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON aura_audit_events(timestamp)")
+
+    def record(
+        self,
+        *,
+        action: str,
+        actor: str,
+        resource: str,
+        decision: str,
+        reason: str,
+        correlation_id: str | None = None,
+        **payload: Any,
+    ) -> AuditRecord:
+        entry = AuditRecord(
+            action=action,
+            actor=actor,
+            resource=resource,
+            decision=decision,
+            reason=reason,
+            timestamp=self._clock.utcnow_iso(),
+            correlation_id=correlation_id,
+            payload=payload,
+        )
+        try:
+            with self._state.connection() as conn:
+                conn.execute(
+                    "INSERT INTO aura_audit_events "
+                    "(action, actor, resource, decision, reason, timestamp, correlation_id, payload) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        entry.action,
+                        entry.actor,
+                        entry.resource,
+                        entry.decision,
+                        entry.reason,
+                        entry.timestamp,
+                        entry.correlation_id,
+                        json.dumps(entry.to_dict().get("payload") or {}, sort_keys=True, default=str),
+                    ),
+                )
+        except Exception:  # noqa: BLE001 - audit must never break the request path
+            # Shared audit store unavailable: keep a bounded local buffer so the
+            # decision remains observable in this process and no unhandled error
+            # propagates into a request handler.
+            self._fallback_records.append(entry)
+            if len(self._fallback_records) > 1000:
+                self._fallback_records.pop(0)
+        return entry
+
+    def entries(self) -> list[AuditRecord]:
+        try:
+            with self._state.connection() as conn:
+                raws = conn.execute(
+                    "SELECT action, actor, resource, decision, reason, timestamp, correlation_id, payload "
+                    "FROM aura_audit_events ORDER BY id"
+                ).fetchall()
+        except Exception:  # noqa: BLE001
+            return list(self._fallback_records)
+        records: list[AuditRecord] = []
+        for raw in raws:
+            records.append(
+                AuditRecord(
+                    action=str(raw[0]),
+                    actor=str(raw[1]),
+                    resource=str(raw[2]),
+                    decision=str(raw[3]),
+                    reason=str(raw[4]),
+                    timestamp=str(raw[5]),
+                    correlation_id=str(raw[6]) if raw[6] is not None else None,
+                    payload=json.loads(raw[7] or "{}"),
+                )
+            )
+        return records
+
+
 class PostgreSQLApiKeyStore:
     """Shared API-key lifecycle (HMAC digests only, never raw keys)."""
 

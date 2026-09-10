@@ -190,12 +190,23 @@ class AuraApiServer:
             from aura.api.distributed import (
                 DistributedRateLimiter,
                 PostgreSQLApiKeyStore,
+                PostgreSQLAuditLog,
                 PostgreSQLSessionStore,
                 PostgreSQLStateStore,
             )
 
             self._distributed_state = PostgreSQLStateStore(dsn=self.config.distributed_state_dsn)
             self._session_store = PostgreSQLSessionStore(self._distributed_state)
+            # A shared flight recorder makes execution replay available on any
+            # API instance (multi-instance replay).
+            from aura.observability.flight_recorder import PostgreSQLFlightRecorder
+
+            self.aura.brain.recorder = PostgreSQLFlightRecorder(
+                self._distributed_state, clock=self.aura._clock
+            )
+            # A shared audit log lets every instance see the complete
+            # security-relevant history.
+            self.audit = PostgreSQLAuditLog(self._distributed_state, clock=self.aura._clock)
             self._rate_limiter = DistributedRateLimiter(
                 state=self._distributed_state,
                 burst=self.config.rate_burst,

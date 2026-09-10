@@ -73,13 +73,18 @@ def test_session_lifecycle(state: PostgreSQLStateStore) -> None:
 
 
 def test_session_expiry(state: PostgreSQLStateStore) -> None:
-    store = PostgreSQLSessionStore(state)
-    sid = "ses-expire-1"
-    store.create(sid, ttl_seconds=0.01, data={})
-    assert store.get(sid) is not None
     import time
 
-    time.sleep(0.02)
+    store = PostgreSQLSessionStore(state)
+    sid = "ses-expire-1"
+    store.create(sid, ttl_seconds=3600, data={})
+    assert store.get(sid) is not None
+    # Deterministically force expiry (no wall-clock races under load).
+    with state.connection() as conn:
+        conn.execute(
+            "UPDATE aura_sessions SET expires_at = %s WHERE session_id = %s",
+            (time.time() - 1.0, sid),
+        )
     assert store.get(sid) is None
 
 
