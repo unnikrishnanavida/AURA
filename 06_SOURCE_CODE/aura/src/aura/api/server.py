@@ -837,6 +837,14 @@ def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
     server_config = ServerConfig(
         host=host,
         port=port,
+        api_key=os.environ.get("AURA_API_KEY") or None,
+        api_secret=os.environ.get("AURA_API_SECRET") or None,
+        admin_key=os.environ.get("AURA_API_ADMIN_KEY") or None,
+        trust_proxy=_env_bool("AURA_API_TRUST_PROXY", default=False),
+        rate_burst=int(_env_float("AURA_API_RATE_BURST", default=60.0)),
+        rate_per_second=_env_float("AURA_API_RATE_PER_SECOND", default=1.0),
+        max_request_bytes=int(_env_float("AURA_API_MAX_REQUEST_BYTES", default=1_048_576.0)),
+        allow_pipeline=_env_bool("AURA_API_ALLOW_PIPELINE", default=False),
         distributed_state_dsn=os.environ.get("AURA_API_DISTRIBUTED_STATE_DSN") or None,
         distributed_state_policy=os.environ.get("AURA_API_DISTRIBUTED_STATE_POLICY", "fail_closed"),
         session_ttl_seconds=_env_float("AURA_API_SESSION_TTL_SECONDS", default=86400.0),
@@ -845,6 +853,13 @@ def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
         config=server_config,
         aura_config=config,
     ).run()
+
+
+def _env_bool(name: str, *, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 if __name__ == "__main__":

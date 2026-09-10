@@ -11,7 +11,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 
 RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir . \
+ && pip install --no-cache-dir '.[postgresql]' \
  && addgroup --system aura && adduser --system --ingroup aura aura \
  && mkdir -p /data /app/data \
  && chown -R aura:aura /data /app/data \

@@ -14,13 +14,21 @@ fails-closed on incompatible schema) but targets PostgreSQL using psycopg3.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from aura.foundation.errors import ConfigurationError
 
+logger = logging.getLogger("aura.memory")
+
 SCHEMA_TABLE = "schema_version"
 INITIAL_VERSION = 0
 CURRENT_SCHEMA_VERSION = 1
+
+# Advisory-lock key for serializing concurrent migrations across instances.
+# Must remain stable across releases (a fixed 64-bit value in the migration
+# namespace; see https://www.postgresql.org/docs/current/functions-admin.html).
+_MIGRATION_LOCK_KEY = 0x41555241_4D5F4D31  # "AURAM_M1" as a bigint literal
 
 _COLUMNS = """
     id TEXT PRIMARY KEY,
@@ -96,25 +104,36 @@ def migrate(conn: Any) -> list[int]:
 
     Each migration runs in its own transaction; a failure rolls back that
     migration and raises :class:`ConfigurationError`.
+
+    Concurrent-start safety: multi-instance deployments start several API
+    processes against the same database. PostgreSQL DDL is transactional, but
+    racing ``CREATE TABLE IF NOT EXISTS`` on a fresh catalog can trigger
+    ``UniqueViolation`` (``pg_type_typname_nsp_index``) because catalog checks
+    are not fully serialized. A session-level advisory lock serializes the
+    migrate path so exactly one instance performs migration and other
+    instances wait and then observe the final schema.
     """
-    _ensure_version_table(conn)
-    current = current_version(conn)
-    applied: list[int] = []
-    pending = sorted(version for version in MIGRATIONS if version > current)
-    for version in pending:
-        statements = MIGRATIONS[version]
-        try:
-            with conn.transaction():
+    with conn.transaction():
+        # Session-level advisory lock keyed to a fixed migration namespace.
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (_MIGRATION_LOCK_KEY,))
+        _ensure_version_table(conn)
+        current = current_version(conn)
+        applied: list[int] = []
+        pending = sorted(version for version in MIGRATIONS if version > current)
+        for version in pending:
+            statements = MIGRATIONS[version]
+            try:
+                logger.warning("applying migration version=%s", version)
                 for statement in statements:
                     conn.execute(statement)
                 _set_version(conn, version)
-        except Exception as exc:  # psycopg.Error and friends
-            raise ConfigurationError(
-                f"migration to schema version {version} failed; "
-                f"database left at version {current}. Reason: {exc}"
-            ) from exc
-        applied.append(version)
-    return applied
+            except Exception as exc:  # psycopg.Error and friends
+                raise ConfigurationError(
+                    f"migration to schema version {version} failed; "
+                    f"database left at version {current}. Reason: {exc}"
+                ) from exc
+            applied.append(version)
+        return applied
 
 
 def validate_schema(conn: Any) -> None:
