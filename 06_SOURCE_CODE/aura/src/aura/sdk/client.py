@@ -35,10 +35,11 @@ class Aura:
         clock: Clock | None = None,
         seed: int | None = None,
         provider: EmbeddedReasoningProvider | None = None,
+        recorder: Any = None,
     ) -> None:
         self._config = config or AuraConfig()
         self._clock = clock or SystemClock()
-        self._brain = BrainEngine.create(config=self._config, clock=self._clock, seed=seed)
+        self._brain = BrainEngine.create(config=self._config, clock=self._clock, seed=seed, recorder=recorder)
         self._provider = provider or EmbeddedReasoningProvider(seed=seed)
 
     @property

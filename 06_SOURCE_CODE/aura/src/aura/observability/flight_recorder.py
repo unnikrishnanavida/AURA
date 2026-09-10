@@ -145,5 +145,93 @@ class FileFlightRecorder(FlightRecorder):
     def close(self) -> None:
         self._handle.close()
 
+class PostgreSQLFlightRecorder(FlightRecorder):
+    """Shared, durable flight recorder backed by PostgreSQL.
+
+    Events are stored in the ``aura_flight_events`` table via a psycopg
+    connection borrowed from the distributed-state pool, so any API instance
+    can replay an execution recorded by another instance (multi-instance
+    replay). The schema is created idempotently on construction.
+    """
+
+    def __init__(self, state: Any, clock: Clock | None = None) -> None:
+        super().__init__(clock=clock)
+        self._state = state
+        with self._state.connection() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS aura_flight_events (
+                    event_id TEXT PRIMARY KEY,
+                    execution_id TEXT NOT NULL,
+                    correlation_id TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    sequence BIGINT NOT NULL,
+                    payload TEXT NOT NULL DEFAULT '{}'
+                )
+                """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_flight_execution ON aura_flight_events(execution_id)"
+            )
+
+    def _append(self, event: EventRecord) -> None:
+        with self._state.connection() as conn:
+            conn.execute(
+                "INSERT INTO aura_flight_events "
+                "(event_id, execution_id, correlation_id, timestamp, source, event_type, sequence, payload) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) "
+                "ON CONFLICT (event_id) DO NOTHING",
+                (
+                    str(event.event_id),
+                    str(event.execution_id),
+                    str(event.correlation_id),
+                    event.timestamp,
+                    event.source,
+                    event.event_type,
+                    int(event.sequence),
+                    json.dumps(event.payload, sort_keys=True, default=str),
+                ),
+            )
+
+    def events(self, **filters: Any) -> list[EventRecord]:
+        with self._state.connection() as conn:
+            raws = conn.execute(
+                "SELECT event_id, execution_id, correlation_id, timestamp, source, event_type, sequence, payload "
+                "FROM aura_flight_events"
+            ).fetchall()
+        records: list[EventRecord] = []
+        for raw in raws:
+            records.append(
+                EventRecord(
+                    event_id=EventId.from_str(str(raw[0])),
+                    execution_id=ExecutionId.from_str(str(raw[1])),
+                    correlation_id=CorrelationId.from_str(str(raw[2])),
+                    timestamp=str(raw[3]),
+                    source=str(raw[4]),
+                    event_type=str(raw[5]),
+                    sequence=int(raw[6]),
+                    payload=json.loads(raw[7] or "{}"),
+                )
+            )
+        for key, value in filters.items():
+            if value is None:
+                continue
+            records = [e for e in records if getattr(e, key) == value]
+        return records
+
+    def close(self) -> None:
+        # The pool is owned by the distributed-state store; nothing to close here.
+        return
+
+
+__all__ = [
+    "EventRecord",
+    "FileFlightRecorder",
+    "FlightRecorder",
+    "InMemoryFlightRecorder",
+    "PostgreSQLFlightRecorder",
+]
 
 __all__ = ["EventRecord", "FileFlightRecorder", "FlightRecorder", "InMemoryFlightRecorder"]

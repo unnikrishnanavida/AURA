@@ -99,6 +99,7 @@ class BrainEngine:
         clock: Clock | None = None,
         seed: int | None = None,
         memory_store: Any | None = None,
+        recorder: Any = None,
     ) -> BrainEngine:
         from aura.memory.engine import MemoryEngine
         from aura.observability.logging import get_logger
@@ -113,7 +114,7 @@ class BrainEngine:
             planning=PlanningEngine(),
             reflection=ReflectionEngine(),
             learning=LearningEngine(),
-            recorder=InMemoryFlightRecorder(clock=clk),
+            recorder=recorder if recorder is not None else InMemoryFlightRecorder(clock=clk),
             metrics=Metrics(),
             clock=clk,
             config=cfg,
