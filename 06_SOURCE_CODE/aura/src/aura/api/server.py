@@ -70,6 +70,15 @@ class ServerConfig:
     max_request_bytes: int = 1_048_576
     allow_pipeline: bool = False
     pipeline_actions: tuple[str, ...] = ("echo", "note")
+    # -- distributed (shared) state for multi-instance deployments ---------
+    # When ``distributed_state_dsn`` is set, sessions / API keys / rate limits
+    # live in the shared PostgreSQL store so multiple API instances behave as
+    # one security boundary. ``distributed_state_policy`` controls degraded
+    # behavior when the shared store is unreachable: "fail_closed" (default)
+    # denies; "bounded_local" throttles per-instance and is never silent.
+    distributed_state_dsn: str | None = None
+    distributed_state_policy: str = "fail_closed"
+    session_ttl_seconds: float | None = 86400.0
 
 
 OPENAPI: dict[str, Any] = {
@@ -166,20 +175,55 @@ class AuraApiServer:
         # -- security middleware -------------------------------------------
         from aura.api.security import ApiKeyIssuer, RateLimiter
 
-        self._key_issuer: ApiKeyIssuer | None
+        # Duck-typed: `ApiKeyIssuer` and `PostgreSQLApiKeyStore` share the same
+        # issue/validate/revoke API. No union type needed; callers stay agnostic.
+        self._key_issuer: Any = None
+        self._distributed_state: Any = None
+        self._session_store: Any = None
+        # Duck-typed: both the local and distributed limiters expose
+        # `allow(ip: str) -> bool`. The protocol is identical, so no union type
+        # is needed and callers stay backend-agnostic.
+        self._rate_limiter: Any
         issuer_secret = self.config.api_secret or os.environ.get("AURA_API_SECRET", "")
-        if self.config.api_key is not None or issuer_secret:
-            self._key_issuer = ApiKeyIssuer(
-                secret=issuer_secret or ("dev-secret-not-for-prod-" + (self.config.api_key or "x")),
+
+        if self.config.distributed_state_dsn:
+            from aura.api.distributed import (
+                DistributedRateLimiter,
+                PostgreSQLApiKeyStore,
+                PostgreSQLSessionStore,
+                PostgreSQLStateStore,
+            )
+
+            self._distributed_state = PostgreSQLStateStore(dsn=self.config.distributed_state_dsn)
+            self._session_store = PostgreSQLSessionStore(self._distributed_state)
+            self._rate_limiter = DistributedRateLimiter(
+                state=self._distributed_state,
+                burst=self.config.rate_burst,
+                per_second=self.config.rate_per_second,
+                degraded_policy=self.config.distributed_state_policy,
                 audit=self.audit,
             )
+            if self.config.api_key is not None or issuer_secret:
+                self._key_issuer = PostgreSQLApiKeyStore(
+                    self._distributed_state,
+                    secret=issuer_secret or ("dev-secret-not-for-prod-" + (self.config.api_key or "x")),
+                    audit=self.audit,
+                )
+            else:
+                self._key_issuer = None
         else:
-            self._key_issuer = None
-        self._rate_limiter = RateLimiter(
-            burst=self.config.rate_burst,
-            per_second=self.config.rate_per_second,
-            audit=self.audit,
-        )
+            if self.config.api_key is not None or issuer_secret:
+                self._key_issuer = ApiKeyIssuer(
+                    secret=issuer_secret or ("dev-secret-not-for-prod-" + (self.config.api_key or "x")),
+                    audit=self.audit,
+                )
+            else:
+                self._key_issuer = None
+            self._rate_limiter = RateLimiter(
+                burst=self.config.rate_burst,
+                per_second=self.config.rate_per_second,
+                audit=self.audit,
+            )
 
     def _pipeline(self) -> ExecutionPipeline:
         """Lazily build the canonical pipeline with safely inert actions only."""
@@ -235,6 +279,13 @@ class AuraApiServer:
         from aura.foundation.ids import new_hex
 
         session_id = f"ses-{new_hex()}"
+        if self._session_store is not None:
+            self._session_store.create(
+                session_id,
+                ttl_seconds=self.config.session_ttl_seconds,
+                data={"created_at": self.aura.config.environment.value},
+            )
+            return session_id
         self.sessions[session_id] = {
             "created_at": self.aura.config.environment.value,
             "events": 0,
@@ -409,6 +460,17 @@ class AuraApiServer:
                     if not self._require_auth(correlation):
                         return
                     session_id = path.split("/v1/sessions/", 1)[1]
+                    if service._session_store is not None:
+                        record = service._session_store.get(session_id)
+                        if record is None:
+                            self._error(404, f"session not found: {session_id}", correlation, "api.not_found")
+                            return
+                        self._send(
+                            200,
+                            {"session_id": record.session_id, "created_at": record.created_at, "events": record.events},
+                            correlation,
+                        )
+                        return
                     session = service.sessions.get(session_id)
                     if session is None:
                         self._error(404, f"session not found: {session_id}", correlation, "api.not_found")
@@ -439,6 +501,9 @@ class AuraApiServer:
                 path = urlparse(self.path).path
                 if path == "/v1/keys":
                     self._handle_issue_key(self._read_json() or {}, correlation)
+                    return
+                if path == "/v1/keys/revoke":
+                    self._handle_revoke_key(self._read_json() or {}, correlation)
                     return
                 if path not in {
                     "/v1/reason",
@@ -486,13 +551,20 @@ class AuraApiServer:
                     self._handle_plan(body, correlation)
                     return
                 if path == "/v1/sessions":
-                    service._create_session()
-                    session_id = list(service.sessions)[-1]
-                    self._send(
-                        201,
-                        {"session_id": session_id, **service.sessions[session_id]},
-                        correlation,
-                    )
+                    session_id = service._create_session()
+                    if service._session_store is not None:
+                        record = service._session_store.get(session_id)
+                        self._send(
+                            201,
+                            {"session_id": session_id, "created_at": record.created_at, "events": record.events},
+                            correlation,
+                        )
+                    else:
+                        self._send(
+                            201,
+                            {"session_id": session_id, **service.sessions[session_id]},
+                            correlation,
+                        )
                     return
                 if path == "/v1/pipeline":
                     self._handle_pipeline(body, correlation)
@@ -511,6 +583,20 @@ class AuraApiServer:
                     scopes=tuple(str(s) for s in body.get("scopes", ("*",))),
                 )
                 self._send(201, {"key_id": key_id, "api_key": raw_key}, correlation)
+
+            def _handle_revoke_key(self, body: dict[str, Any], correlation: CorrelationId) -> None:
+                if service._key_issuer is None:
+                    self._error(404, "key issuance not enabled", correlation, "api.disabled")
+                    return
+                if not service.config.admin_key or self.headers.get("Authorization") != f"Bearer {service.config.admin_key}":
+                    self._error(403, "admin authorization required", correlation, "api.forbidden")
+                    return
+                key_id = body.get("key_id")
+                if not isinstance(key_id, str) or not key_id:
+                    self._error(400, "field 'key_id' is required", correlation, "api.validation")
+                    return
+                revoked = service._key_issuer.revoke(key_id)
+                self._send(200, {"key_id": key_id, "revoked": revoked}, correlation)
 
             def _handle_reason(self, body: dict[str, Any], correlation: CorrelationId) -> None:
                 question = body.get("question")
@@ -698,6 +784,16 @@ class AuraApiServer:
             server.server_close()
 
 
+def _env_float(name: str, *, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
     """Run the API server.
 
@@ -716,14 +812,26 @@ def run_server(host: str = "127.0.0.1", port: int = 8765) -> None:
                 "production run requires storage.backend = 'sqlite' (or 'postgresql'); "
                 "refusing to serve with in-memory storage"
             )
+        if config.storage.backend == "postgresql" and not config.storage.postgresql_dsn:
+            raise ConfigurationError(
+                "production run with storage.backend='postgresql' requires "
+                "AURA_STORAGE_POSTGRESQL_DSN; refusing to serve"
+            )
         api_secret = os.environ.get("AURA_API_SECRET", "")
         if not api_secret or len(api_secret) < 16:
             raise ConfigurationError(
                 "production run requires AURA_API_SECRET (>= 16 characters); "
                 "refusing to serve with a weak or missing issuer secret"
             )
+    server_config = ServerConfig(
+        host=host,
+        port=port,
+        distributed_state_dsn=os.environ.get("AURA_API_DISTRIBUTED_STATE_DSN") or None,
+        distributed_state_policy=os.environ.get("AURA_API_DISTRIBUTED_STATE_POLICY", "fail_closed"),
+        session_ttl_seconds=_env_float("AURA_API_SESSION_TTL_SECONDS", default=86400.0),
+    )
     AuraApiServer(
-        config=ServerConfig(host=host, port=port),
+        config=server_config,
         aura_config=config,
     ).run()
 

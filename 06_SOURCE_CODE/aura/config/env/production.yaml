@@ -1,9 +1,9 @@
 # AURA PRODUCTION configuration.
 # Includes the production safety gates that the config validator enforces:
 #   - storage.backend must NOT be 'memory'
-# The example below uses PostgreSQL in production (interface-only fallback is
-# deliberately rejected by the runtime; use the sqlite backend for single-node
-# deployments until a PG adapter is implemented).
+#   - storage.backend = postgresql requires AURA_STORAGE_POSTGRESQL_DSN
+# The API refuses to start on production with in-memory storage, a missing
+# PostgreSQL DSN, or a weak/missing issuer secret — there is no silent fallback.
 environment: production
 instance_id: prod-instance
 
@@ -16,6 +16,15 @@ storage:
   backend: postgresql
   run_migrations: true
   integrity_check_on_open: true
+  # postgresql_dsn is intentionally NOT set here — production must inject it via
+  # environment (AURA_STORAGE_POSTGRESQL_DSN) or a secret store.
+
+# Distributed API state for multi-instance production.
+# AURA_API_DISTRIBUTED_STATE_DSN (shared PostgreSQL DSN) is required for
+# production-like multi-instance deployments; policy must be explicit.
+api:
+  distributed_state_policy: fail_closed
+  session_ttl_seconds: 86400
 
 # API security boundaries MUST come from the environment in production.
 # AURA_API_SECRET (>= 16 chars) is required; the API refuses to serve on

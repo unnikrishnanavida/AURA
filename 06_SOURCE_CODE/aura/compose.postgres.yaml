@@ -1,0 +1,77 @@
+# AURA production-like local topology: shared PostgreSQL + two API instances.
+#
+# This is the minimal multi-instance deployment for real production validation:
+#   - one PostgreSQL database (persistent memory + distributed state)
+#   - two AURA API instances sharing that database (sessions, keys, rate limits)
+#   - both instances use backend=postgresql and distributed state
+#
+# TLS termination belongs in a reverse proxy in front of these instances (the
+# API itself serves plain HTTP by design; the proxy terminates HTTPS). For a
+# full proxy + TLS topology see evaluation/production_e2e.py.
+#
+# Secrets below are local-development placeholders only. Production must inject
+# them from a secret store; never commit real credentials.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: aura
+      POSTGRES_USER: aura
+      POSTGRES_PASSWORD: aura_local_dev_only
+    ports:
+      - "55433:5432"
+    volumes:
+      - aura-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aura -d aura"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  aura-api-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aura:0.2.0
+    environment:
+      AURA_ENVIRONMENT: staging
+      AURA_INSTANCE_ID: api-1
+      AURA_STORAGE_BACKEND: postgresql
+      AURA_STORAGE_POSTGRESQL_DSN: host=postgres port=5432 dbname=aura user=aura password=aura_local_dev_only
+      AURA_API_DISTRIBUTED_STATE_DSN: host=postgres port=5432 dbname=aura user=aura password=aura_local_dev_only
+      AURA_API_DISTRIBUTED_STATE_POLICY: fail_closed
+      AURA_API_SECRET: local-dev-issuer-secret-0123456789
+      AURA_API_KEY: local-dev-bearer-token-0123456789
+      AURA_API_PORT: "8765"
+    ports:
+      - "8765:8765"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  aura-api-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aura:0.2.0
+    environment:
+      AURA_ENVIRONMENT: staging
+      AURA_INSTANCE_ID: api-2
+      AURA_STORAGE_BACKEND: postgresql
+      AURA_STORAGE_POSTGRESQL_DSN: host=postgres port=5432 dbname=aura user=aura password=aura_local_dev_only
+      AURA_API_DISTRIBUTED_STATE_DSN: host=postgres port=5432 dbname=aura user=aura password=aura_local_dev_only
+      AURA_API_DISTRIBUTED_STATE_POLICY: fail_closed
+      AURA_API_SECRET: local-dev-issuer-secret-0123456789
+      AURA_API_KEY: local-dev-bearer-token-0123456789
+      AURA_API_PORT: "8766"
+    ports:
+      - "8766:8766"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  aura-pg:
