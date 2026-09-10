@@ -1,0 +1,19 @@
+{
+  "criteria": "documented in module docstring; each dimension scored 0..1",
+  "dimensions": {
+    "execution_safety": 1.0,
+    "memory_retrieval": 1.0,
+    "planning_quality": 1.0,
+    "reasoning_correctness": 1.0,
+    "reflection_quality": 1.0,
+    "regression_protection": 1.0,
+    "research_evidence": 1.0
+  },
+  "generated_at": "2026-09-10T12:18:17.639300+00:00",
+  "latency_ms_avg": {
+    "plan": 0.188,
+    "reason": 0.348,
+    "recall": 0.112
+  },
+  "overall": 1.0
+}
