@@ -13,7 +13,15 @@ import uuid
 
 import pytest
 
+from aura.foundation.ids import MemoryId
 from aura.memory import pg_migrations
+from aura.memory.models import (
+    MemoryConfidence,
+    MemoryEntry,
+    MemoryType,
+    Provenance,
+    Sensitivity,
+)
 from aura.memory.postgresql_store import PostgreSQLMemoryStore
 
 DSN = os.environ.get("AURA_TEST_POSTGRESQL_DSN", "")
@@ -55,9 +63,6 @@ def test_migration_from_blank_db_upgrades_schema(fresh_db: str) -> None:
 def test_data_preserved_across_migration(fresh_db: str) -> None:
     """Data written after migration is durable and readable on re-open."""
     store = PostgreSQLMemoryStore(dsn=fresh_db, max_connections=2)
-    from aura.foundation.ids import MemoryId
-    from aura.memory.models import MemoryEntry, MemoryType, Provenance, Sensitivity, MemoryConfidence
-
     entry = MemoryEntry(
         id=MemoryId.new(),
         key="upgrade-key",
