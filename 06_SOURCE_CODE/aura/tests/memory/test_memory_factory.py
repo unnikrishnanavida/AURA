@@ -32,9 +32,12 @@ def test_factory_selects_sqlite(tmp_path: object) -> None:
     store.close()  # type: ignore[attr-defined]
 
 
-def test_factory_rejects_postgresql_interface_only() -> None:
-    with pytest.raises(ConfigurationError, match="interface-only"):
+def test_factory_rejects_postgresql_without_dsn() -> None:
+    """PostgreSQL must not silently fall back to another backend when misconfigured."""
+    with pytest.raises(ConfigurationError, match="postgresql_dsn"):
         create_memory_store(StorageConfig(backend="postgresql"))
+    with pytest.raises(ConfigurationError, match="not installed|failed to connect|refusing"):
+        create_memory_store(StorageConfig(backend="postgresql", postgresql_dsn="host=127.0.0.1 port=1 dbname=aura user=aura password=wrong connect_timeout=1"))
 
 
 def test_production_config_rejects_memory_backend() -> None:

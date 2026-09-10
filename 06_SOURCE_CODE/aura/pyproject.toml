@@ -29,6 +29,10 @@ dependencies = [
 [project.optional-dependencies]
 agents = ["aura-agents>=0.1"]
 cli = ["typer>=0.9"]  # reserved; CLI uses stdlib argparse
+postgresql = [
+    "psycopg[binary]>=3.2,<4",
+    "psycopg-pool>=3.2,<4",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

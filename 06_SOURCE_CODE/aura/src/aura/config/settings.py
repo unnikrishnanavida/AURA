@@ -59,9 +59,8 @@ class StorageConfig(BaseModel):
 
     - ``memory`` (development default) — no persistence across process restarts
     - ``sqlite`` — local file-backed store with WAL, migrations, transactions
-    - ``postgresql`` — reserved; the same :class:`MemoryStore` interface and row
-      format apply, but no driver is bundled (PostgreSQL is never a mandatory
-      local dependency).
+    - ``postgresql`` — shared durable store; requires the optional
+      ``psycopg[binary]`` + ``psycopg-pool`` drivers and a reachable server.
 
     Production configuration must not silently fall back to in-memory storage:
     :class:`AuraConfig` rejects ``backend=memory`` in the production environment.
@@ -69,6 +68,9 @@ class StorageConfig(BaseModel):
 
     backend: str = Field(default="memory")
     sqlite_path: str = Field(default="data/aura.sqlite3")
+    postgresql_dsn: str | None = Field(default=None)
+    postgresql_min_connections: int = Field(default=1, ge=1)
+    postgresql_max_connections: int = Field(default=5, ge=1)
     run_migrations: bool = True
     integrity_check_on_open: bool = True
 

@@ -39,11 +39,16 @@ def create_memory_store(config: AuraConfig | StorageConfig | None = None, **over
         )
 
     if backend == "postgresql":
-        # Interface-only today; never silently fall back to an in-memory store.
-        raise ConfigurationError(
-            "storage.backend = 'postgresql' is interface-only in this release; "
-            "use 'sqlite' for persistent local storage or implement the "
-            "PostgreSQLMemoryStore protocol"
+        from aura.memory.postgresql_store import PostgreSQLMemoryStore
+
+        dsn = overrides.pop("dsn", settings.postgresql_dsn)
+        return PostgreSQLMemoryStore(
+            dsn=dsn,
+            min_connections=overrides.get("min_connections", settings.postgresql_min_connections),
+            max_connections=overrides.get("max_connections", settings.postgresql_max_connections),
+            run_migrations=settings.run_migrations,
+            validate_schema=settings.integrity_check_on_open,
+            clock=overrides.get("clock"),
         )
 
     raise ConfigurationError(f"unknown storage backend {backend!r}")
