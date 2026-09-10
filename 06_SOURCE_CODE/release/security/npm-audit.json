@@ -1,0 +1,6 @@
+{
+  "tool": "npm audit",
+  "total_vulnerabilities": 0,
+  "by_severity": {},
+  "findings": []
+}
