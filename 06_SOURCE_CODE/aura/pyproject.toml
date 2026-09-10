@@ -39,6 +39,7 @@ dev = [
     "mypy>=1.8",
     "ruff>=0.4",
     "types-PyYAML>=6.0",
+    "cryptography>=42",  # ephemeral test-CA generation for TLS proxy tests
 ]
 build = ["build>=1.0"]
 

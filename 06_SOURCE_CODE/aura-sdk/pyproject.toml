@@ -7,8 +7,7 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 
-[project.dependencies]
-aura = ">=0.2.0"
+dependencies = ["aura>=0.2.0"]
 
 [build-system]
 requires = ["setuptools>=68", "wheel"]
