@@ -35,8 +35,9 @@ class _EchoUpstream(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0") or 0)
         body = self.rfile.read(length) if length > 0 else b""
         xff = self.headers.get("X-Forwarded-For", "")
+        xproto = self.headers.get("X-Forwarded-Proto", "")
         payload = json.dumps(
-            {"method": self.command, "path": self.path, "body": body.decode(), "xff": xff}
+            {"method": self.command, "path": self.path, "body": body.decode(), "xff": xff, "xproto": xproto}
         ).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -193,3 +194,236 @@ def test_proxy_requires_cert_and_upstream() -> None:
     # No upstreams.
     with pytest.raises(ConfigurationError):
         TLSProxy(config=ProxyConfig(tls_certfile="cert.pem", tls_keyfile="key.pem"))
+
+
+# ---------------------------------------------------------------------------
+# Phase 25: production TLS + edge security
+# ---------------------------------------------------------------------------
+
+
+def test_expired_certificate_is_refused_at_startup() -> None:
+    """A proxy configured with an expired certificate must not serve."""
+    from datetime import UTC, datetime, timedelta
+
+    from aura.api.tls_testing import generate_certs_with_validity
+    from aura.foundation.errors import ConfigurationError
+
+    past = datetime.now(UTC) - timedelta(days=2)
+    expired = generate_certs_with_validity(
+        not_valid_after=past, not_valid_before=past - timedelta(days=30)
+    )
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(expired.certfile), tls_keyfile=str(expired.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=1)],
+    ))
+    with pytest.raises(ConfigurationError, match="EXPIRED"):
+        proxy.start()
+
+
+def test_wrong_hostname_certificate_rejected_by_client(certs: CertBundle) -> None:
+    """A client connecting with server_name='localhost' but a cert for another
+    host must fail certificate verification."""
+    from datetime import UTC, datetime, timedelta
+
+    from aura.api.tls_testing import generate_certs_with_validity
+
+    other = generate_certs_with_validity(
+        not_valid_after=datetime.now(UTC) + timedelta(days=365),
+        hostname="other-host.example",
+    )
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(other.certfile), tls_keyfile=str(other.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+    ))
+    proxy.start()
+    try:
+        ctx = ssl.create_default_context(cafile=str(other.cafile))
+        with pytest.raises(ssl.SSLCertVerificationError):
+            conn = HTTPSConnection("localhost", proxy.tls_port, timeout=5, context=ctx)
+            conn.request("GET", "/liveness")
+            conn.getresponse()
+            conn.close()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+
+def test_untrusted_ca_is_rejected(certs: CertBundle) -> None:
+    """A client that does not trust the server CA must fail handshake."""
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(certs.certfile), tls_keyfile=str(certs.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+    ))
+    proxy.start()
+    try:
+        # System trust store does not include the ephemeral CA; the client must
+        # refuse the handshake (CERT_REQUIRED + hostname check on by default).
+        ctx = ssl.create_default_context()
+        with pytest.raises(ssl.SSLCertVerificationError):
+            conn = HTTPSConnection("localhost", proxy.tls_port, timeout=5, context=ctx)
+            conn.request("GET", "/liveness")
+            conn.getresponse()
+            conn.close()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+
+def test_hsts_header_when_enabled(certs: CertBundle) -> None:
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(certs.certfile), tls_keyfile=str(certs.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+        hsts_enabled=True, hsts_max_age=86_400, hsts_include_subdomains=True,
+    ))
+    proxy.start()
+    try:
+        status, _, headers = _https_get(proxy.tls_port, "/liveness", cafile=str(certs.cafile))
+        assert status == 200
+        assert headers["Strict-Transport-Security"] == "max-age=86400; includeSubDomains"
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+
+def test_host_validation_rejects_untrusted_host(certs: CertBundle) -> None:
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(certs.certfile), tls_keyfile=str(certs.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+        allowed_hosts=("aura.example.com",),
+    ))
+    proxy.start()
+    try:
+        ctx = ssl.create_default_context(cafile=str(certs.cafile))
+        conn = HTTPSConnection("localhost", proxy.tls_port, timeout=5, context=ctx)
+        conn.request("GET", "/liveness")
+        resp: HTTPResponse = conn.getresponse()
+        assert resp.status == 421
+        conn.close()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+def test_request_header_size_limit(certs: CertBundle) -> None:
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(certs.certfile), tls_keyfile=str(certs.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+        max_header_bytes=512,
+    ))
+    proxy.start()
+    try:
+        ctx = ssl.create_default_context(cafile=str(certs.cafile))
+        conn = HTTPSConnection("localhost", proxy.tls_port, timeout=5, context=ctx)
+        conn.request("GET", "/liveness", headers={"X-Spam": "y" * 800})
+        resp: HTTPResponse = conn.getresponse()
+        assert resp.status == 431
+        conn.close()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+
+def test_request_body_size_limit(certs: CertBundle) -> None:
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(certs.certfile), tls_keyfile=str(certs.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+        max_request_bytes=1024,
+    ))
+    proxy.start()
+    try:
+        ctx = ssl.create_default_context(cafile=str(certs.cafile))
+        conn = HTTPSConnection("localhost", proxy.tls_port, timeout=5, context=ctx)
+        conn.request("POST", "/v1/remember", body=b"x" * 2000, headers={"Content-Type": "application/json"})
+        resp: HTTPResponse = conn.getresponse()
+        assert resp.status == 413
+        conn.close()
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+
+def test_forwarded_proto_set_by_proxy(certs: CertBundle) -> None:
+    """X-Forwarded-Proto must be https coming out of the proxy."""
+    upstream, upstream_port = _start_upstream()
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(certs.certfile), tls_keyfile=str(certs.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+    ))
+    proxy.start()
+    try:
+        ctx = ssl.create_default_context(cafile=str(certs.cafile))
+        conn = HTTPSConnection("localhost", proxy.tls_port, timeout=5, context=ctx)
+        conn.request("GET", "/health")
+        resp: HTTPResponse = conn.getresponse()
+        body = json.loads(resp.read().decode())
+        conn.close()
+        assert resp.status == 200
+        assert body.get("xproto") == "https", body
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()
+
+
+def test_certificate_rotation(certs: CertBundle) -> None:
+    """A proxy restarted with a rotated certificate serves the new cert."""
+    from datetime import UTC, datetime, timedelta
+
+    from aura.api.tls_testing import certificate_details, generate_certs_with_validity
+
+    first = certs
+    second = generate_certs_with_validity(
+        not_valid_after=datetime.now(UTC) + timedelta(days=365), hostname="localhost"
+    )
+    upstream, upstream_port = _start_upstream()
+
+    proxy = TLSProxy(config=ProxyConfig(
+        host="127.0.0.1", tls_port=0, redirect_port=None,
+        tls_certfile=str(first.certfile), tls_keyfile=str(first.keyfile),
+        upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+    ))
+    proxy.start()
+    try:
+        status, _, _ = _https_get(proxy.tls_port, "/liveness", cafile=str(first.cafile))
+        assert status == 200
+
+        # Simulate certificate rotation: stop, point config at the new cert, restart.
+        proxy.stop()
+        proxy.config = ProxyConfig(
+            host="127.0.0.1", tls_port=0, redirect_port=None,
+            tls_certfile=str(second.certfile), tls_keyfile=str(second.keyfile),
+            upstreams=[Upstream(host="127.0.0.1", port=upstream_port)],
+        )
+        proxy._httpd = None
+        proxy._redirect_httpd = None
+        proxy.start()
+
+        status, _, _ = _https_get(proxy.tls_port, "/liveness", cafile=str(second.cafile))
+        assert status == 200
+
+        first_details = certificate_details(first.certfile)
+        second_details = certificate_details(second.certfile)
+        assert first_details["serial_number"] != second_details["serial_number"]
+        assert first_details["not_after"] != second_details["not_after"]
+    finally:
+        proxy.stop()
+        upstream.shutdown()
+        upstream.server_close()

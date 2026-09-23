@@ -48,6 +48,21 @@ class ProxyConfig:
     upstreams: list[Upstream] = field(default_factory=list)
     max_request_bytes: int = 1_048_576
     timeout_seconds: float = 10.0
+    # TLS hardening (secure defaults)
+    min_tls_version: ssl.TLSVersion = ssl.TLSVersion.TLSv1_2
+    disable_weak_ciphers: bool = True
+    # Host validation: when non-empty, requests whose Host header is not in
+    # this set are rejected with 421. Defaults to allow (hostname vs IP nuance)
+    # for staging; production deployments should pin the public hostname.
+    allowed_hosts: tuple[str, ...] = ()
+    # HSTS: emitted on HTTPS responses when enabled.
+    hsts_enabled: bool = False
+    hsts_max_age: int = 31_536_000  # 1 year
+    hsts_include_subdomains: bool = False
+    # Edge limits.
+    max_header_bytes: int = 16_384
+    # Warn in logs when the certificate expires within this many days.
+    cert_expiry_warning_days: int = 30
 _SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
@@ -69,8 +84,21 @@ class _ProxyHandler(http.server.BaseHTTPRequestHandler):
         return cast(TLSProxy, server.proxy)
 
     def _forward_request(self) -> None:
-        length = int(self.headers.get("Content-Length", "0") or 0)
         proxy = self._proxy
+        # Header-size limit (protects against oversized headers/DOS via parser).
+        raw_header_bytes = len(self.requestline) + sum(
+            len(k) + len(v) + 4 for k, v in self.headers.items()
+        )
+        if raw_header_bytes > proxy.config.max_header_bytes:
+            self._error(431, "request headers too large")
+            return
+        # Host validation (default deny when allowed_hosts configured).
+        if proxy.config.allowed_hosts:
+            host = self.headers.get("Host", "")
+            if host not in proxy.config.allowed_hosts:
+                self._error(421, "Misdirected request: untrusted host")
+                return
+        length = int(self.headers.get("Content-Length", "0") or 0)
         if length > proxy.config.max_request_bytes:
             self._error(413, "request body too large")
             return
@@ -104,6 +132,10 @@ class _ProxyHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(payload)))
         for key, value in _SECURITY_HEADERS.items():
             self.send_header(key, value)
+        hsts = proxy.config
+        if hsts.hsts_enabled:
+            substr = "; includeSubDomains" if hsts.hsts_include_subdomains else ""
+            self.send_header("Strict-Transport-Security", f"max-age={hsts.hsts_max_age}{substr}")
         self.end_headers()
         self.wfile.write(payload)
         proxy._rr = (start + 1) % len(upstreams)
@@ -201,8 +233,35 @@ class TLSProxy:
 
     def start(self) -> None:
         """Bind TLS (and redirect) servers; non-blocking."""
+        from aura.api.tls_testing import certificate_expiry_status
+
+        # Certificate lifecycle: fail fast on an unreadable/invalid cert file;
+        # warn when the current certificate is close to expiry.
+        expiry = certificate_expiry_status(
+            self.config.tls_certfile, warn_days=self.config.cert_expiry_warning_days
+        )
+        if expiry["expired"]:
+            raise ConfigurationError(
+                f"TLS certificate is EXPIRED (not_after={expiry['not_after']}); refusing to serve"
+            )
+        if expiry["warning_before_expiry"]:
+            import logging
+
+            logging.getLogger("aura.proxy").warning(
+                "TLS certificate expires soon",
+                extra={"days_remaining": expiry["days_remaining"], "not_after": expiry["not_after"]},
+            )
+
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_cert_chain(self.config.tls_certfile, self.config.tls_keyfile)
+        ctx.minimum_version = self.config.min_tls_version
+        ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+        if self.config.disable_weak_ciphers:
+            # TLS1.2+ ciphers only (no RC4, 3DES, CBC-NULL). Cipher names are
+            # OpenSSL-style and verified at load time.
+            ctx.set_ciphers(
+                "ECDHE+AESGCM:ECDHE+CHACHA20:ECDHE+AES256-SHA384:ECDHE+AES128-SHA256"
+            )
 
         self._httpd = http.server.ThreadingHTTPServer((self.config.host, self.config.tls_port), _ProxyHandler)
         self._httpd.proxy = self  # type: ignore[attr-defined]
