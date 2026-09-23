@@ -79,6 +79,13 @@ class ServerConfig:
     distributed_state_dsn: str | None = None
     distributed_state_policy: str = "fail_closed"
     session_ttl_seconds: float | None = 86400.0
+    # -- real alerting (Phase 26) --------------------------------------------
+    # When set, the server evaluates metrics/health signals into alerts and
+    # posts them to this webhook (or delivers to the structured logger when
+    # left empty). Thresholds come from the default rule set and are
+    # operator-overridable.
+    alert_webhook_url: str | None = None
+    alert_instance_id: str = ""
 
 
 OPENAPI: dict[str, Any] = {
@@ -171,6 +178,19 @@ class AuraApiServer:
         self.sessions: dict[str, dict[str, object]] = {}
         self.logger = StructuredLogger("aura.api")
         self._pipeline_cache: ExecutionPipeline | None = None
+
+        # -- real alerting (Phase 26) --------------------------------------
+        from aura.observability.alerts import AlertManager, WebhookAlertChannel, default_rules
+
+        alert_channels: list[object] = []
+        if self.config.alert_webhook_url:
+            alert_channels.append(WebhookAlertChannel(url=self.config.alert_webhook_url))
+        self._alert_manager = AlertManager(
+            channels=alert_channels,  # type: ignore[arg-type]
+            instance_id=self.config.alert_instance_id or self.config.host or "default",
+        )
+        for rule in default_rules():
+            self._alert_manager.add_rule(rule)
 
         # -- security middleware -------------------------------------------
         from aura.api.security import ApiKeyIssuer, RateLimiter
@@ -317,6 +337,23 @@ class AuraApiServer:
         except Exception as exc:  # noqa: BLE001 - surface dependency failure
             return {"ok": False, "backend": backend, "error": str(exc)}
 
+    def _evaluate_alerts(self, health: dict[str, object]) -> list[dict[str, object]]:
+        """Evaluate alert rules against the current metrics + health snapshot.
+
+        Delivers alerts to the configured channel(s). Failure to evaluate must
+        never break the request path.
+        """
+        try:
+            snapshot = self.aura.metrics()
+        except Exception:  # noqa: BLE001 - metrics must never break evaluation
+            snapshot = {}
+        try:
+            fired = self._alert_manager.evaluate(snapshot=snapshot or {}, health=health)
+        except Exception:  # noqa: BLE001
+            self.logger.error("alert evaluation failed")
+            return []
+        return [a.to_dict() for a in fired]
+
     def _handler(self) -> type[BaseHTTPRequestHandler]:
         service = self
 
@@ -378,6 +415,7 @@ class AuraApiServer:
             def _check_rate_limit(self, correlation: CorrelationId, proxied: bool = True) -> bool:
                 ip = self._client_ip(proxied)
                 if not service._rate_limiter.allow(ip):
+                    service.aura.brain.metrics.increment("rate_limit_deny")
                     self._error(429, "rate limit exceeded", correlation, "api.rate_limited")
                     return False
                 return True
@@ -399,6 +437,7 @@ class AuraApiServer:
 
             def _require_auth(self, correlation: CorrelationId) -> bool:
                 if not self._authorized(correlation):
+                    service.aura.brain.metrics.increment("api_auth_failure")
                     self._error(401, "authentication required", correlation, "api.auth_failed")
                     return False
                 return True
@@ -426,11 +465,16 @@ class AuraApiServer:
                     health = service.aura.health()
                     dependency = service._dependency_health()
                     healthy = health.get("status") == "ok" and dependency.get("ok") is True
+                    fired = service._evaluate_alerts(
+                        {"status": "ok" if healthy else "unhealthy", "dependency": dependency}
+                    )
                     self._send(
                         200 if healthy else 503,
                         {"status": "ok" if healthy else "unhealthy",
                          "engines": health.get("engines"),
-                         "dependency": dependency},
+                         "dependency": dependency,
+                         "alerts_fired": fired,
+                         "alert_health": service._alert_manager.health()},
                         correlation,
                     )
                     return

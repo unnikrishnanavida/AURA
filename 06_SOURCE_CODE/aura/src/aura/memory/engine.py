@@ -7,11 +7,15 @@ hidden global.
 
 from __future__ import annotations
 
+import functools
+import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar, cast
 
 from aura.foundation.clock import Clock, SystemClock
+from aura.foundation.errors import NotFoundError
 from aura.foundation.ids import ExecutionId, MemoryId
 from aura.memory.consolidation import Consolidator, ForgettingPolicy
 from aura.memory.graph import MemoryGraph
@@ -26,6 +30,9 @@ from aura.memory.models import (
 )
 from aura.memory.retrieval import RetrievalScorer
 from aura.memory.store import InMemoryMemoryStore, MemoryStore
+from aura.observability.metrics import Metrics
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 @dataclass
@@ -40,6 +47,64 @@ class FlightRecorderLike(Protocol):
     def events(self, **filters: Any) -> list[Any]: ...
 
 
+def _count_store_failure(method: F) -> F:
+    """Increment ``memory_operation_failure`` exactly once on a genuine store failure.
+
+    The canonical memory operation failure boundary: a real exception escaping a
+    store-backed memory operation increments the metric (when a Metrics registry
+    is wired in) and is re-raised unchanged. Two non-failure exceptions are
+    never counted and simply propagate so callers keep today's control flow:
+
+    - ``NotFoundError`` — the store contract's normal "not found" signal.
+    - ``ValueError`` — caller-side validation (e.g. an out-of-range importance)
+      rejected before the operation reaches persistence.
+
+    Any other exception (OSError, backend connectivity errors, serialization
+    failures, ...) is a genuine memory operation failure and must be counted
+    exactly once.
+
+    Re-entrancy: some operations compose other decorated operations (e.g.
+    :meth:`MemoryEngine.archive` calls :meth:`MemoryEngine.by_id`), so one
+    exception would otherwise be counted twice as it bubbles through each
+    decorated boundary. A per-thread re-entrancy depth makes the increment fire
+    only for the outermost failing operation boundary — one real event, one
+    increment — while concurrent failures on other threads are still counted
+    independently.
+    """
+
+    @functools.wraps(method)
+    def wrapped(self: Any, *args: Any, **kwargs: Any) -> Any:
+        _guard.depth += 1
+        try:
+            return method(self, *args, **kwargs)
+        except (NotFoundError, ValueError):
+            raise
+        except Exception:
+            # The outermost decorated boundary that observes this exception is
+            # the one that counts it. Inner composed boundaries (e.g. by_id
+            # inside archive) have depth > 1 here and must remain silent so a
+            # single event never produces multiple increments.
+            if _guard.depth == 1:
+                metrics = getattr(self, "_metrics", None)
+                if metrics is not None:
+                    metrics.increment("memory_operation_failure")
+            raise
+        finally:
+            _guard.depth -= 1
+
+    return cast(F, wrapped)
+
+
+class _FailureGuardState(threading.local):
+    """Per-thread re-entrancy depth for :data:`_guard`."""
+
+    def __init__(self) -> None:
+        self.depth = 0
+
+
+_guard = _FailureGuardState()
+
+
 class MemoryEngine:
     def __init__(
         self,
@@ -50,6 +115,7 @@ class MemoryEngine:
         scorer: RetrievalScorer | None = None,
         consolidator: Consolidator | None = None,
         forgetting: ForgettingPolicy | None = None,
+        metrics: Metrics | None = None,
     ) -> None:
         self.store = store or InMemoryMemoryStore()
         self.graph = graph or MemoryGraph()
@@ -57,8 +123,10 @@ class MemoryEngine:
         self._scorer = scorer or RetrievalScorer()
         self._consolidator = consolidator or Consolidator()
         self._forgetting = forgetting or ForgettingPolicy()
+        self._metrics = metrics
 
     # -- write -------------------------------------------------------------
+    @_count_store_failure
     def remember(
         self,
         *,
@@ -92,14 +160,17 @@ class MemoryEngine:
         self.graph.register(entry)
         return entry
 
+    @_count_store_failure
     def get(self, memory_id: MemoryId) -> MemoryEntry:
         entry = self.store.get(memory_id)
         entry.touch(self._clock)
         return entry
 
+    @_count_store_failure
     def forget(self, memory_id: MemoryId) -> None:
         self.store.delete(memory_id)
 
+    @_count_store_failure
     def archive(self, memory_id: MemoryId) -> MemoryEntry:
         """Move a live record into the archive (retention), switching status."""
         from aura.memory.models import MemoryStatus
@@ -110,10 +181,12 @@ class MemoryEngine:
         self.store.archive(entry)
         return entry
 
+    @_count_store_failure
     def restore(self, memory_id: MemoryId) -> MemoryEntry:
         """Restore an archived record back into the live store."""
         return self.store.restore(memory_id)
 
+    @_count_store_failure
     def link(self, source: MemoryId, target: MemoryId, kind: LinkKind) -> None:
         from_entry = self.store.get(source)
         to_entry = self.store.get(target)
@@ -122,6 +195,7 @@ class MemoryEngine:
         self.graph.link(from_entry, to_entry, kind)
 
     # -- read ---------------------------------------------------------------
+    @_count_store_failure
     def recall(self, query: MemoryQuery) -> list[MemoryEntry]:
         candidates = self.store.search(text=query.text, kind=query.kind, tags=query.tags)
         ranked = sorted(
@@ -133,15 +207,18 @@ class MemoryEngine:
             entry.touch(self._clock)
         return ranked[: query.limit]
 
+    @_count_store_failure
     def by_id(self, memory_id: MemoryId) -> MemoryEntry:
         return self.store.get(memory_id)
 
+    @_count_store_failure
     def recent(self, *, kind: MemoryType | None = None, limit: int = 10) -> list[MemoryEntry]:
         entries = [e for e in self.store.all() if kind is None or e.kind is kind]
         entries.sort(key=lambda e: e.last_access, reverse=True)
         return entries[:limit]
 
     # -- maintenance ----------------------------------------------------------
+    @_count_store_failure
     def consolidate(self) -> list[MemoryEntry]:
         summaries = self._consolidator.consolidate(list(self.store.all()))
         for summary in summaries:
@@ -149,6 +226,7 @@ class MemoryEngine:
             self.graph.register(summary)
         return summaries
 
+    @_count_store_failure
     def enforce_forgetting(self) -> list[MemoryId]:
         removed: list[MemoryId] = []
         for entry in list(self.store.all()):
@@ -157,6 +235,7 @@ class MemoryEngine:
                 self.store.delete(entry.id)
         return removed
 
+    @_count_store_failure
     def ingest_execution(self, recorder: FlightRecorderLike, execution_id: ExecutionId) -> list[MemoryEntry]:
         from aura.memory.replay import ReplayToMemory
 

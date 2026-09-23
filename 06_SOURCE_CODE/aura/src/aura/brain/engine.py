@@ -107,15 +107,16 @@ class BrainEngine:
         cfg = config or AuraConfig()
         clk = clock or SystemClock()
         store = memory_store if memory_store is not None else _memory_store_from_config(cfg, clk)
+        metrics = Metrics()
         return cls(
-            memory=MemoryEngine(store=store, clock=clk),
+            memory=MemoryEngine(store=store, clock=clk, metrics=metrics),
             knowledge=KnowledgeBase(),
             reasoning=ReasoningEngine(seed=seed if seed is not None else cfg.engines.reasoning_seed),
             planning=PlanningEngine(),
             reflection=ReflectionEngine(),
             learning=LearningEngine(),
             recorder=recorder if recorder is not None else InMemoryFlightRecorder(clock=clk),
-            metrics=Metrics(),
+            metrics=metrics,
             clock=clk,
             config=cfg,
             logger=get_logger("aura.brain"),
@@ -133,6 +134,43 @@ class BrainEngine:
         }
 
     def reason(
+        self,
+        *,
+        question: str,
+        facts: dict[str, float] | None = None,
+        rules: tuple[Rule, ...] = (),
+        hypotheses: tuple[str, ...] = (),
+        prior: float = 0.5,
+        cases: tuple[Case, ...] = (),
+        likelihoods: dict[str, tuple[float, float]] | None = None,
+        goal: Goal | None = None,
+        tasks: list[Task] | None = None,
+    ) -> BrainResult:
+        """Run one cognitive execution — the canonical execution boundary.
+
+        Every genuine execution attempt increments ``execution_count``; any
+        exception escaping the cognitive cycle additionally increments
+        ``execution_failure`` (one event, one increment on each metric) so the
+        HighErrorRate alert derives its ratio from live runtime events.
+        """
+        self.metrics.increment("execution_count")
+        try:
+            return self._reason_impl(
+                question=question,
+                facts=facts,
+                rules=rules,
+                hypotheses=hypotheses,
+                prior=prior,
+                cases=cases,
+                likelihoods=likelihoods,
+                goal=goal,
+                tasks=tasks,
+            )
+        except Exception:
+            self.metrics.increment("execution_failure")
+            raise
+
+    def _reason_impl(
         self,
         *,
         question: str,
