@@ -5,7 +5,7 @@ import pathlib
 import sys
 import types
 
-root = pathlib.Path(r"c:/Users/navid/Desktop/AURA/06_SOURCE_CODE/aura-learning/foundation/logging")
+root = pathlib.Path(r"E:/AURA/06_SOURCE_CODE/aura-learning/foundation/logging")
 
 pkg = types.ModuleType("foundation.logging")
 pkg.__path__ = [str(root)]
@@ -31,7 +31,7 @@ logger.add_handler(handler)
 logger.info("hello", metadata={"component": "test"})
 assert logger.record_count == 1
 
-path = pathlib.Path(r"c:/Users/navid/Desktop/AURA/06_SOURCE_CODE/aura-learning/tests/tmp_test.log")
+path = pathlib.Path(r"E:/AURA/06_SOURCE_CODE/aura-learning/tests/tmp_test.log")
 file_handler = FileHandler(str(path), formatter=LogFormatter(pattern="{message}"))
 logger2 = Logger(name="file", level=LogLevel.INFO)
 logger2.add_handler(file_handler)

@@ -6,7 +6,7 @@ or similar no-op. BROKEN means it fails to compile.
 import pathlib
 import ast
 
-ROOT = pathlib.Path(r"C:\Users\navid\Desktop\AURA\06_SOURCE_CODE")
+ROOT = pathlib.Path(r"E:\AURA\06_SOURCE_CODE")
 SKIP = {"__pycache__", "node_modules", ".venv", "aura-memory", "aura-learning", "aura-brain"}
 STUB_TOKENS = {"pass", "return True", "return {}", "return []", "TODO"}
 

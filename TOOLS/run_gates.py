@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 
-ROOT = r"C:\Users\navid\Desktop\AURA"
+ROOT = r"E:\AURA"
 SRC = os.path.join(ROOT, "06_SOURCE_CODE", "aura", "src")
 TESTS = os.path.join(ROOT, "06_SOURCE_CODE", "aura", "tests")
 OUT = os.path.join(ROOT, "gates_output.txt")

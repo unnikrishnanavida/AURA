@@ -1,4 +1,4 @@
-cd "C:\Users\navid\Desktop\AURA\01_FOUNDATION\Architecture\ADR"
+cd "E:\AURA\01_FOUNDATION\Architecture\ADR"
 
 Remove-Item -Recurse -Force .\ADR-001 -ErrorAction SilentlyContinue
 

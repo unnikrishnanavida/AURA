@@ -4,7 +4,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
 from reportlab.lib.enums import TA_LEFT
 
-root = Path(r'c:/Users/navid/Desktop/AURA')
+root = Path(r'E:/AURA')
 out_dir = root / 'out'
 out_dir.mkdir(exist_ok=True)
 files = [

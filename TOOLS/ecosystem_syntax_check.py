@@ -1,7 +1,7 @@
 """Ecosystem-wide syntax validation: compile every .py under 06_SOURCE_CODE (excluding heavy/generated trees)."""
 import pathlib
 
-ROOT = pathlib.Path(r"C:\Users\navid\Desktop\AURA\06_SOURCE_CODE")
+ROOT = pathlib.Path(r"E:\AURA\06_SOURCE_CODE")
 SKIP = {"__pycache__", "node_modules", ".venv", "aura-memory", "aura-learning", "aura-brain"}
 # those three were already audited and are documented as historical scaffolds
 

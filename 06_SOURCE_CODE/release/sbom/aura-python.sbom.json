@@ -301,7 +301,7 @@
         {
           "comment": "PackageSource: Local",
           "type": "distribution",
-          "url": "file:///C:/Users/navid/Desktop/AURA/06_SOURCE_CODE/aura"
+          "url": "file:///E:/AURA/06_SOURCE_CODE/aura"
         }
       ],
       "licenses": [

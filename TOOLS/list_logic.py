@@ -3,7 +3,7 @@ import ast
 import pathlib
 import subprocess
 
-ROOT = pathlib.Path(r"C:\Users\navid\Desktop\AURA")
+ROOT = pathlib.Path(r"E:\AURA")
 
 
 def logic_files(prefix: str, min_nodes: int = 5) -> list[str]:

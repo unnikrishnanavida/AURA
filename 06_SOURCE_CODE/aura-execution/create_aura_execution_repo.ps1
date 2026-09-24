@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Root = "C:\Users\navid\Desktop\AURA\06_SOURCE_CODE",
+    [string]$Root = "E:\AURA\06_SOURCE_CODE",
     [switch]$Force
 )
 

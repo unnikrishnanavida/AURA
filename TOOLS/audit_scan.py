@@ -9,7 +9,7 @@ import pathlib
 import subprocess
 from collections import Counter, defaultdict
 
-ROOT = pathlib.Path(r"C:\Users\navid\Desktop\AURA")
+ROOT = pathlib.Path(r"E:\AURA")
 TRIVIAL_RETURNS = {"True", "False", "None", "0", "1", "-1", "{}", "[]", '""', "''"}
 
 

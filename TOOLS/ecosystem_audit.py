@@ -1,13 +1,13 @@
-﻿"""Fast full-ecosystem audit: classify every .py under 06_SOURCE_CODE.
+"""Fast full-ecosystem audit: classify every .py under 06_SOURCE_CODE.
 Uses compile() (C-speed) for syntax + a line-based heuristic for stubs.
 Writes ECOSYSTEM_AUDIT.md and ECOSYSTEM_AUDIT_RAW.txt."""
 import os
 import sys
 from collections import defaultdict
 
-ROOT = r"C:\Users\navid\Desktop\AURA\06_SOURCE_CODE"
-OUT = r"C:\Users\navid\Desktop\AURA\ECOSYSTEM_AUDIT.md"
-RAW = r"C:\Users\navid\Desktop\AURA\ECOSYSTEM_AUDIT_RAW.txt"
+ROOT = r"E:\AURA\06_SOURCE_CODE"
+OUT = r"E:\AURA\ECOSYSTEM_AUDIT.md"
+RAW = r"E:\AURA\ECOSYSTEM_AUDIT_RAW.txt"
 
 SKIP = {".venv", "site-packages", "node_modules", "__pycache__", ".git",
         ".tox", ".mypy_cache", ".ruff_cache", ".pytest_cache", "dist", "build",
