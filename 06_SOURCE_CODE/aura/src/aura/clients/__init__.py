@@ -8,11 +8,12 @@ Shared, genuinely tested primitives for product clients:
   queue with retry and last-write-wins conflict handling.
 - :mod:`aura.clients.desktop` — desktop client (lifecycle + online/offline
   operation with secure storage and queue replay).
-- :mod:`aura.clients.mobile` (Phase 34) — mobile client contract on the same
-  primitives.
+- :mod:`aura.clients.mobile` — mobile client contract on the same primitives
+  (platform keychain/keystore wiring is environment-dependent).
 """
 
 from aura.clients.desktop import AppState, DesktopClient, DesktopLifecycle
+from aura.clients.mobile import MobileClient, SyncSnapshot
 from aura.clients.offline_queue import OfflineQueue
 from aura.clients.secure_store import (
     EnvVarSecureStore,
@@ -29,7 +30,9 @@ __all__ = [
     "EnvVarSecureStore",
     "KeyringSecureStore",
     "MemorySecureStore",
+    "MobileClient",
     "OfflineQueue",
     "SecureStore",
+    "SyncSnapshot",
     "secure_store_from",
 ]

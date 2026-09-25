@@ -2,6 +2,17 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 34 — Mobile Product (2026-09-25)
+
+- `aura.clients.mobile.MobileClient` — offline-first mobile client on the SAME
+  tested primitives as desktop: secure auth storage (Android Keystore / iOS
+  Keychain seam via `SecureStore`), idempotent offline queue, `reason()` online
+  or queued, `sync()` on reconnect, `SyncSnapshot` (pending/sequence/LWW).
+- `tests/clients` 10/10 pass; mypy strict + ruff clean. Android/iOS
+  build/launch classified **ENVIRONMENT DEPENDENT / NOT VERIFIED** (no mobile
+  toolchains).
+- Report: `06_SOURCE_CODE/aura/PHASE_34_MOBILE_PRODUCT_REPORT.md`.
+
 ### Phase 33 — Desktop Product (2026-09-25)
 
 - New `aura.clients` thick-client foundation: **secure storage** (memory/env/OS
