@@ -2,6 +2,18 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 32 — Real Cloud Deployment Support (2026-09-25)
+
+- New `aura.cloud` provider abstraction + policy/safety layer: `CloudManager`,
+  `CloudClient` contract, `SimulatedCloudClient` (deterministic local
+  lifecycle), cost budget, instance caps, IAM least-privilege guard, audit,
+  and honest per-operation verification flags (`SIMULATED` / `LIVE: NO`).
+- **No cloud credentials were available — every execution is SIMULATED** and
+  explicitly flagged; live deployment classified **NOT VERIFIED /
+  ENVIRONMENT_DEPENDENT**.
+- `tests/cloud` 6/6 pass; mypy strict + ruff clean.
+- Report: `06_SOURCE_CODE/aura/PHASE_32_REAL_CLOUD_DEPLOYMENT_REPORT.md`.
+
 ### Phase 31 — Web Productization (2026-09-25)
 
 - Added a real **sign-in gate** (verify against `/ready`, 401 credential
