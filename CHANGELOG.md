@@ -2,6 +2,18 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 31 — Web Productization (2026-09-25)
+
+- Added a real **sign-in gate** (verify against `/ready`, 401 credential
+  errors, session indicator, Sign out) and a **conversation** view (history,
+  loading with Cancel via transport abort, per-turn Retry, safe structured
+  answers incl. Phase-29 provider metadata). `AuraApi.request` gained external
+  `AbortSignal` cancellation.
+- Web suite: **16/16 tests pass** (auth 4 + conversation 3 + existing 9);
+  `tsc -b && vite build` clean; eslint clean. Live browser E2E classified
+  **NOT VERIFIED** (no browser automation toolchain).
+- Report: `06_SOURCE_CODE/aura-web/PHASE_31_WEB_PRODUCTIZATION_REPORT.md`.
+
 ### Phase 30 — Canonical Ten-Layer Security (2026-09-25)
 
 - Implemented the missing canonical controls (previous layers were already

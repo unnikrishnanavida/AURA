@@ -6,6 +6,7 @@ import { MemoryPage } from "./pages/MemoryPage";
 import { ResearchPage } from "./pages/ResearchPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StatusPage } from "./pages/StatusPage";
+import { AuthGate } from "./lib/auth-gate";
 import { useSettings } from "./lib/settings-context";
 
 const TABS = [
@@ -50,7 +51,9 @@ function App() {
           ))}
         </ul>
       </nav>
-      <main>{activeTab.node}</main>
+      <main>
+        <AuthGate>{activeTab.node}</AuthGate>
+      </main>
       <footer>
         <p>Every value shown here is fetched live from the configured AURA API. No demo data is injected.</p>
       </footer>

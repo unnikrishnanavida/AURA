@@ -66,6 +66,7 @@ export class AuraApi {
     method: "GET" | "POST",
     path: string,
     body?: Record<string, unknown>,
+    options?: { signal?: AbortSignal },
   ): Promise<T> {
     const url = `${this.config.endpoint}${path}`;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -78,13 +79,16 @@ export class AuraApi {
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
+        const wireSignal = options?.signal
+          ? AbortSignal.any([controller.signal, options.signal])
+          : controller.signal;
         let response: Response;
         try {
           response = await fetch(url, {
             method,
             headers,
             body: body === undefined ? undefined : JSON.stringify(body),
-            signal: controller.signal,
+            signal: wireSignal,
           });
         } finally {
           clearTimeout(timer);
@@ -101,6 +105,9 @@ export class AuraApi {
         }
         return payload as T;
       } catch (error) {
+        if (options?.signal?.aborted) {
+          throw new ApiError(0, "sdk.cancelled", "cancelled");
+        }
         const isAbort = error instanceof DOMException && error.name === "AbortError";
         if (isAbort && this.shouldRetry(0, "sdk.timeout", attempt)) {
           await sleep(100);
@@ -125,16 +132,20 @@ export class AuraApi {
     return this.request<ReadyResult>("GET", "/ready");
   }
 
-  reason(question: string, facts?: Record<string, number>): Promise<ReasonResult> {
-    return this.request<ReasonResult>("POST", "/v1/reason", { question, facts: facts ?? {} });
+  reason(
+    question: string,
+    facts?: Record<string, number>,
+    signal?: AbortSignal,
+  ): Promise<ReasonResult> {
+    return this.request<ReasonResult>("POST", "/v1/reason", { question, facts: facts ?? {} }, { signal });
   }
 
   remember(key: string, content: Record<string, unknown>, kind = "episodic"): Promise<{ memory_id: string }> {
     return this.request<{ memory_id: string }>("POST", "/v1/remember", { key, content, kind });
   }
 
-  recall(text: string, limit = 10): Promise<{ entries: MemoryEntry[] }> {
-    return this.request<{ entries: MemoryEntry[] }>("POST", "/v1/recall", { text, limit });
+  recall(text: string, limit = 10, signal?: AbortSignal): Promise<{ entries: MemoryEntry[] }> {
+    return this.request<{ entries: MemoryEntry[] }>("POST", "/v1/recall", { text, limit }, { signal });
   }
 
   observe(statement: string, predicate: string[] = []): Promise<{ claim_id: string }> {

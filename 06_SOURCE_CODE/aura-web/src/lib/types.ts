@@ -62,6 +62,7 @@ export interface ReasonResult {
   confidence: number | null;
   uncertainty: string | null;
   steps: Array<{ stage: string; detail: string }>;
+  provider?: { name: string; synthesized: boolean } | null;
 }
 
 /** Plan result envelope. */
