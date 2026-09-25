@@ -2,6 +2,16 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 33 — Desktop Product (2026-09-25)
+
+- New `aura.clients` thick-client foundation: **secure storage** (memory/env/OS
+  keyring; never plaintext; refuses to degrade), **offline queue** (durable,
+  idempotent, LWW, failure reporting), and **desktop client** (lifecycle +
+  online/offline operation with secure auth and reconnect `sync()`).
+- `tests/clients` 6/6 pass; mypy strict + ruff clean. GUI/packaging/launch
+  classified **ENVIRONMENT DEPENDENT / NOT VERIFIED** (not built here).
+- Report: `06_SOURCE_CODE/aura/PHASE_33_DESKTOP_PRODUCT_REPORT.md`.
+
 ### Phase 32 — Real Cloud Deployment Support (2026-09-25)
 
 - New `aura.cloud` provider abstraction + policy/safety layer: `CloudManager`,
