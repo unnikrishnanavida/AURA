@@ -16,11 +16,13 @@ import pytest
 from aura.api.distributed import (
     DistributedRateLimiter,
     PostgreSQLApiKeyStore,
+    PostgreSQLAuditLog,
     PostgreSQLSessionStore,
     PostgreSQLStateStore,
 )
 from aura.foundation.errors import ConfigurationError
 from aura.security.audit import AuditLog
+from aura.security.spool import AuditSpool
 
 DSN = os.environ.get("AURA_TEST_POSTGRESQL_DSN", "")
 
@@ -163,3 +165,119 @@ def test_distributed_concurrent_writes(state: PostgreSQLStateStore) -> None:
     assert errors == [], f"concurrent session writes failed: {errors}"
     for i in range(4):
         assert store.get(f"ses-thread-{i}-5") is not None
+def test_audit_durable_lifecycle_and_idempotency(state: PostgreSQLStateStore, tmp_path) -> None:
+    """Durable append + idempotent duplicate writes (same event_id -> one row)."""
+    log = PostgreSQLAuditLog(state, spool_directory=str(tmp_path / "spool"))
+    first = log.record(
+        action="policy.deny",
+        actor="int-alice",
+        resource="api",
+        decision="deny",
+        reason="policy",
+        event_id="ev-int-lc-1",
+        correlation_id="co-int-lc",
+        payload={"scopes": ["read"]},
+    )
+    # Replaying/sending the same logical event must not duplicate the row.
+    log.record(
+        action="policy.deny",
+        actor="int-alice",
+        resource="api",
+        decision="deny",
+        reason="policy",
+        event_id="ev-int-lc-1",
+        correlation_id="co-int-lc",
+        payload={"scopes": ["read"]},
+    )
+    got = log.entries(actor="int-alice")
+    assert len(got) == 1
+    assert got[0].action == "policy.deny"
+    assert got[0].correlation_id == "co-int-lc"
+    assert got[0].payload == {"scopes": ["read"]}
+    assert str(got[0].event_id) == "ev-int-lc-1"
+    assert got[0].to_dict()["event_id"] == "ev-int-lc-1"
+    assert first.event_id is not None
+    # The duplicate was idempotent: exactly one stored row for the event.
+    assert len(log.entries(event_id="ev-int-lc-1")) == 1
+
+
+def test_audit_shared_across_instances(state: PostgreSQLStateStore, tmp_path) -> None:
+    """Two list instances over the same store see one complete trail."""
+    a = PostgreSQLAuditLog(state, spool_directory=str(tmp_path / "a"))
+    b = PostgreSQLAuditLog(state, spool_directory=str(tmp_path / "b"))
+    a.record(action="key.issue", actor="int-sys", resource="kid-1", decision="allow", reason="issued", event_id="ev-int-sh-1")
+    # The record written by instance A is visible to instance B.
+    assert len(b.entries(action="key.issue", actor="int-sys")) == 1
+    assert b.entries(event_id="ev-int-sh-1")[0].event_id is not None
+
+
+def test_audit_filters_actor_decision_since(state: PostgreSQLStateStore, tmp_path) -> None:
+    log = PostgreSQLAuditLog(state, spool_directory=str(tmp_path / "spool"))
+    log.record(action="a.1", actor="int-f1", resource="api", decision="allow", reason="r", event_id="ev-int-f-1")
+    log.record(action="a.2", actor="int-f2", resource="api", decision="deny", reason="r", event_id="ev-int-f-2")
+    # Assertions are scoped to unique actors/events because the module shares
+    # one real test database across tests.
+    assert len(log.entries(actor="int-f1")) == 1
+    assert len(log.entries(actor="int-f2", decision="deny")) == 1
+    assert len(log.entries(since="2000-01-01T00:00:00+00:00", actor="int-f1")) == 1
+    assert log.entries(actor="int-f1", decision="deny") == []
+    assert log.entries(event_id="ev-int-f-2")[0].actor == "int-f2"
+
+
+def test_audit_replay_spooled_resyncs(state: PostgreSQLStateStore, tmp_path) -> None:
+    """A spool left by an instance that lost connectivity is replayed on recovery."""
+    spool = AuditSpool(tmp_path / "spool")
+    spool.append(
+        {
+            "event_id": "ev-int-rp-1",
+            "action": "x",
+            "actor": "int-resync",
+            "resource": "api",
+            "decision": "allow",
+            "reason": "recovered",
+            "timestamp": "2026-09-25T10:00:00+00:00",
+            "correlation_id": None,
+            "payload": {},
+        }
+    )
+    spool.append(
+        {
+            "event_id": "ev-int-rp-2",
+            "action": "x",
+            "actor": "int-resync",
+            "resource": "api",
+            "decision": "deny",
+            "reason": "recovered",
+            "timestamp": "2026-09-25T10:00:01+00:00",
+            "correlation_id": None,
+            "payload": {},
+        }
+    )
+    log = PostgreSQLAuditLog(state, spool_directory=str(tmp_path / "spool"))
+    result = log.replay_spooled()
+    assert result == {"replayed": 2, "skipped": 0, "remaining": 0}
+    assert spool.count() == 0
+    assert len(log.entries(actor="int-resync")) == 2
+    # A second replay has nothing to drain.
+    assert log.replay_spooled() == {"replayed": 0, "skipped": 0, "remaining": 0}
+
+
+def test_audit_replay_skips_records_already_present(state: PostgreSQLStateStore, tmp_path) -> None:
+    """Resync skips (idempotently) records that were already persisted."""
+    log = PostgreSQLAuditLog(state, spool_directory=str(tmp_path / "spool"))
+    already = log.record(
+        action="x",
+        actor="int-dup",
+        resource="api",
+        decision="deny",
+        reason="r",
+        event_id="ev-int-dup-1",
+        correlation_id="co-dupe",
+        payload={"n": 1},
+    ).to_dict()
+    spool = AuditSpool(tmp_path / "spool")
+    spool.append(already)
+    result = log.replay_spooled()
+    assert result == {"replayed": 0, "skipped": 1, "remaining": 0}
+    assert spool.count() == 0
+    assert len(log.entries(actor="int-dup")) == 1

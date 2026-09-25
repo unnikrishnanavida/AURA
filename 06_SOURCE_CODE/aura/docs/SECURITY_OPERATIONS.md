@@ -46,8 +46,10 @@
 - TLS certs are operator-supplied; no public-cert automation exists.
 - Multi-node rate limiting is PG-backed (single region) — cross-region
   distributed limits are not implemented.
-- Audit falls back to a bounded in-process buffer during a store outage
-  (records are not replayed to the durable store automatically).
+- Audit is **durable and replayable (Phase 27)**: records carry stable
+  `event_id`s, writes are idempotent (`ON CONFLICT ... DO NOTHING`), store
+  outages spill records to a local JSON-lines spool that survives restarts,
+  and `replay_spooled()` resyncs the spool into PostgreSQL on recovery.
 - No alert delivery platform is wired (rules documented in
   `docs/OBSERVABILITY.md`).
 

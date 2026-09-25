@@ -22,7 +22,10 @@ Honest list. Nothing here is silently papered over.
 
 ## Functional / deployment limitations
 
-- Persistence is behind in-memory interfaces only; no SQLite/Postgres/Redis adapters ship yet.
+- Persistence ships with **real adapters**: SQLite (`memory/sqlite_store.py`)
+  and PostgreSQL (`memory/postgresql_store.py`, `api/distributed.py`,
+  `observability/pg_backup.py`); Redis is not implemented. (Bullet corrected
+  2026-09-25; it previously claimed no adapters shipped.)
 - No Kubernetes manifests; Docker + compose are real, K8s is explicitly unvalidated.
 - External provider SDK bindings are not shipped; the embedded deterministic provider is used by default.
 - The API is a minimal HTTP service (health/ready/reason/replay/openapi); no auth middleware, streaming,

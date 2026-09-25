@@ -32,6 +32,32 @@ Per-request structured logs carry `correlation_id`, `execution_id`, `ts`,
 - Rate-limit denials: `api.rate_limited` + audit `rate_limit.deny`.
 - Prompt-injection / policy denials: audit entries.
 
+## Durable audit (Phase 27)
+
+The security audit trail is durable, idempotent, and replayable:
+
+- **Stable event identity** — every audit record carries an `event_id`
+  (`aura.foundation.ids.EventId`); `GET /v1/audit` includes it.
+- **Idempotent writes** — `PostgreSQLAuditLog` persists to `aura_audit_events`
+  with `ON CONFLICT (event_id) DO NOTHING`, so retries, resync, and concurrent
+  instances can never duplicate a record.
+- **Outage behavior (fail-safe, never silent)** — when the shared store is
+  unreachable a record is (a) kept in a bounded in-memory buffer for immediate
+  in-process observability and (b) **durably spooled** to local JSON-lines
+  files (`data/audit_spool/spool.jsonl` by default) so it survives restarts.
+- **Replay / resync** — `PostgreSQLAuditLog.replay_spooled()` drains the spool
+  into PostgreSQL once the store is reachable; already-present records are
+  skipped (idempotent), and the spool is cleared only after a fully successful
+  resync.
+- **Query surface** — `entries(event_id=..., actor=..., decision=...,
+  correlation_id=..., since=..., limit=...)` executes parameterized SQL;
+  while the store is down the local buffer + spool are served (deduplicated by
+  `event_id`, never fabricated).
+- Schema upgrade is idempotent and concurrency-safe: the `event_id` column is
+  added if missing, legacy rows are backfilled deterministically, and a unique
+  index is created under an advisory lock (fresh DBs and pre-existing
+  deployments are both handled).
+
 ## System signals
 
 - `/liveness` (process alive), `/ready` (can accept work), `/health`

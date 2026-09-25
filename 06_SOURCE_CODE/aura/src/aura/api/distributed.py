@@ -33,11 +33,14 @@ import json
 import threading
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from aura.api.security import KeySpec
 from aura.foundation.errors import ConfigurationError
-from aura.security.audit import AuditLog, AuditRecord
+from aura.foundation.ids import EventId
+from aura.security.audit import AuditLog, AuditRecord, coerce_event_id
+from aura.security.spool import AuditSpool
 
 
 def _optional_pool() -> Any:
@@ -250,23 +253,115 @@ class PostgreSQLSessionStore:
             return int(cur.rowcount)
 
 
+_AUDIT_SCHEMA_LOCK_KEY = 0x41555252_41455554  # "AURADT" advisory namespace
+
+_AUDIT_INSERT_SQL = (
+    "INSERT INTO aura_audit_events "
+    "(event_id, action, actor, resource, decision, reason, timestamp, correlation_id, payload) "
+    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) "
+    "ON CONFLICT (event_id) DO NOTHING"
+)
+
+
+def _matches(
+    record: AuditRecord,
+    *,
+    event_id: str | None,
+    correlation_id: str | None,
+    actor: str | None,
+    resource: str | None,
+    decision: str | None,
+    action: str | None,
+    since: str | None,
+) -> bool:
+    return not (
+        (event_id is not None and str(record.event_id) != event_id)
+        or (correlation_id is not None and record.correlation_id != correlation_id)
+        or (actor is not None and record.actor != actor)
+        or (resource is not None and record.resource != resource)
+        or (decision is not None and record.decision != decision)
+        or (action is not None and record.action != action)
+        or (since is not None and record.timestamp < since)
+    )
+
+
+def _merge_local_records(*groups: list[AuditRecord]) -> dict[str, AuditRecord]:
+    """Merge local record groups (buffer, spool) deduplicated by event id."""
+    merged: dict[str, AuditRecord] = {}
+    for group in groups:
+        for record in group:
+            merged.setdefault(str(record.event_id), record)
+    return merged
+
+
+def _audit_records_from_dicts(raws: list[dict[str, Any]]) -> list[AuditRecord]:
+    records: list[AuditRecord] = []
+    for raw in raws:
+        records.append(
+            AuditRecord(
+                action=str(raw.get("action", "")),
+                actor=str(raw.get("actor", "")),
+                resource=str(raw.get("resource", "")),
+                decision=str(raw.get("decision", "")),
+                reason=str(raw.get("reason", "")),
+                timestamp=str(raw.get("timestamp", "")),
+                event_id=EventId.from_str(raw["event_id"]) if raw.get("event_id") else EventId.new(),
+                correlation_id=raw.get("correlation_id"),
+                payload=dict(raw.get("payload") or {}),
+            )
+        )
+    return records
+
+
 class PostgreSQLAuditLog(AuditLog):
     """Shared, durable audit trail stored in PostgreSQL.
 
     Every record is appended to ``aura_audit_events`` so any API instance can
     read the complete security-relevant history. Append-only; there is no
     update/delete path (audit integrity).
+
+    Phase 27 (durable audit + production reliability):
+
+    - every record carries a stable ``event_id``;
+    - writes are idempotent (``ON CONFLICT (event_id) DO NOTHING``) so replay /
+      resync never duplicates a record, even across concurrent instances;
+    - when the shared store is unreachable the decision stays observable in
+      this process (bounded in-memory buffer) **and** is durably spooled to
+      local JSON-lines files (``spool_directory``); :meth:`replay_spooled`
+      resyncs the spool into PostgreSQL once the store is reachable again.
     """
 
-    def __init__(self, state: PostgreSQLStateStore, clock: Any = None) -> None:
+    def __init__(
+        self,
+        state: PostgreSQLStateStore,
+        *,
+        clock: Any = None,
+        spool_directory: str | Path | None = None,
+    ) -> None:
         super().__init__(clock=clock)
         self._state = state
         self._fallback_records: list[AuditRecord] = []
+        self._lock = threading.RLock()
+        self._spool = AuditSpool(spool_directory or "data/audit_spool")
         with self._state.connection() as conn:
+            self._ensure_audit_schema(conn)
+
+    @staticmethod
+    def _ensure_audit_schema(conn: Any) -> None:
+        """Create/upgrade the audit table (idempotent, concurrency-safe).
+
+        Works for both fresh databases and pre-existing deployments: the
+        ``event_id`` column is added if missing, legacy rows are backfilled with
+        a per-row deterministic value, and a unique index makes the
+        ``ON CONFLICT`` write path well-defined.
+        """
+        with conn.transaction():
+            conn.execute("SELECT pg_advisory_xact_lock(%s)", (_AUDIT_SCHEMA_LOCK_KEY,))
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS aura_audit_events (
                     id BIGSERIAL PRIMARY KEY,
+                    event_id TEXT,
                     action TEXT NOT NULL,
                     actor TEXT NOT NULL,
                     resource TEXT NOT NULL,
@@ -278,7 +373,25 @@ class PostgreSQLAuditLog(AuditLog):
                 )
                 """
             )
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON aura_audit_events(timestamp)")
+            has_event_id = conn.execute(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name = 'aura_audit_events' AND column_name = 'event_id'"
+            ).fetchone()
+            if has_event_id is None:
+                conn.execute("ALTER TABLE aura_audit_events ADD COLUMN event_id TEXT")
+            conn.execute(
+                "UPDATE aura_audit_events SET event_id = 'ev-' || md5("
+                "action || actor || resource || decision || reason || timestamp || "
+                "coalesce(correlation_id, '') || payload || id::text) "
+                "WHERE event_id IS NULL"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_aura_audit_event_id "
+                "ON aura_audit_events(event_id)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON aura_audit_events(timestamp)"
+            )
 
     def record(
         self,
@@ -288,9 +401,13 @@ class PostgreSQLAuditLog(AuditLog):
         resource: str,
         decision: str,
         reason: str,
+        event_id: EventId | str | None = None,
         correlation_id: str | None = None,
-        **payload: Any,
+        payload: dict[str, Any] | None = None,
+        **extra: Any,
     ) -> AuditRecord:
+        merged_payload: dict[str, Any] = dict(payload or {})
+        merged_payload.update(extra)
         entry = AuditRecord(
             action=action,
             actor=actor,
@@ -298,16 +415,16 @@ class PostgreSQLAuditLog(AuditLog):
             decision=decision,
             reason=reason,
             timestamp=self._clock.utcnow_iso(),
+            event_id=coerce_event_id(event_id),
             correlation_id=correlation_id,
-            payload=payload,
+            payload=merged_payload,
         )
         try:
             with self._state.connection() as conn:
                 conn.execute(
-                    "INSERT INTO aura_audit_events "
-                    "(action, actor, resource, decision, reason, timestamp, correlation_id, payload) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                    _AUDIT_INSERT_SQL,
                     (
+                        str(entry.event_id),
                         entry.action,
                         entry.actor,
                         entry.resource,
@@ -320,37 +437,154 @@ class PostgreSQLAuditLog(AuditLog):
                 )
         except Exception:  # noqa: BLE001 - audit must never break the request path
             # Shared audit store unavailable: keep a bounded local buffer so the
-            # decision remains observable in this process and no unhandled error
-            # propagates into a request handler.
-            self._fallback_records.append(entry)
-            if len(self._fallback_records) > 1000:
-                self._fallback_records.pop(0)
+            # decision remains observable in this process, AND persist it to the
+            # local spool so it survives a restart and can be resynced later.
+            with self._lock:
+                self._fallback_records.append(entry)
+                if len(self._fallback_records) > 1000:
+                    self._fallback_records.pop(0)
+                self._spool.append(entry.to_dict())
         return entry
 
-    def entries(self) -> list[AuditRecord]:
+    def entries(
+        self,
+        *,
+        event_id: str | None = None,
+        correlation_id: str | None = None,
+        actor: str | None = None,
+        resource: str | None = None,
+        decision: str | None = None,
+        action: str | None = None,
+        since: str | None = None,
+        limit: int | None = None,
+    ) -> list[AuditRecord]:
+        """Return audit records (optionally filtered), oldest first.
+
+        Filters may target stable ``event_id`` values (exact match on the
+        canonical string form) plus the usual record fields. ``since`` is an
+        ISO-8601 UTC timestamp compared against the stored string form;
+        producers should use the same clock format. When the shared store is
+        unreachable the local buffer + spool are served instead (best-effort,
+        never fabricated).
+        """
+        clauses: list[str] = []
+        params: list[Any] = []
+        for column, value in (
+            ("event_id", event_id),
+            ("correlation_id", correlation_id),
+            ("actor", actor),
+            ("resource", resource),
+            ("decision", decision),
+            ("action", action),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = %s")
+                params.append(value)
+        if since is not None:
+            clauses.append("timestamp >= %s")
+            params.append(since)
+        sql = (
+            "SELECT event_id, action, actor, resource, decision, reason, timestamp, "
+            "correlation_id, payload FROM aura_audit_events"
+        )
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        sql += " ORDER BY id"
+        if limit is not None:
+            sql += " LIMIT %s"
+            params.append(int(limit))
         try:
             with self._state.connection() as conn:
-                raws = conn.execute(
-                    "SELECT action, actor, resource, decision, reason, timestamp, correlation_id, payload "
-                    "FROM aura_audit_events ORDER BY id"
-                ).fetchall()
-        except Exception:  # noqa: BLE001
-            return list(self._fallback_records)
+                raws = conn.execute(sql, tuple(params)).fetchall()
+        except Exception:  # noqa: BLE001 - store unreachable: serve local truth
+            merged = _merge_local_records(
+                list(self._fallback_records), _audit_records_from_dicts(self._spool.entries())
+            )
+            result = [
+                record
+                for record in merged.values()
+                if _matches(
+                    record,
+                    event_id=event_id,
+                    correlation_id=correlation_id,
+                    actor=actor,
+                    resource=resource,
+                    decision=decision,
+                    action=action,
+                    since=since,
+                )
+            ]
+            if limit is not None:
+                result = result[-int(limit) :]
+            return result
         records: list[AuditRecord] = []
         for raw in raws:
             records.append(
                 AuditRecord(
-                    action=str(raw[0]),
-                    actor=str(raw[1]),
-                    resource=str(raw[2]),
-                    decision=str(raw[3]),
-                    reason=str(raw[4]),
-                    timestamp=str(raw[5]),
-                    correlation_id=str(raw[6]) if raw[6] is not None else None,
-                    payload=json.loads(raw[7] or "{}"),
+                    action=str(raw[1]),
+                    actor=str(raw[2]),
+                    resource=str(raw[3]),
+                    decision=str(raw[4]),
+                    reason=str(raw[5]),
+                    timestamp=str(raw[6]),
+                    event_id=EventId.from_str(raw[0]) if raw[0] else EventId.new(),
+                    correlation_id=str(raw[7]) if raw[7] is not None else None,
+                    payload=json.loads(raw[8] or "{}"),
                 )
             )
         return records
+
+    def count(self) -> int:
+        try:
+            with self._state.connection() as conn:
+                row = conn.execute("SELECT COUNT(*) FROM aura_audit_events").fetchone()
+            return int(row[0]) if row is not None else 0
+        except Exception:  # noqa: BLE001
+            with self._lock:
+                spool_ids = {str(raw.get("event_id")) for raw in self._spool.entries()}
+                buffer_ids = {str(record.event_id) for record in self._fallback_records}
+                return len(spool_ids | buffer_ids)
+
+    def replay_spooled(self) -> dict[str, int]:
+        """Resync spooled records into PostgreSQL and clear the spool.
+
+        Idempotent: a record whose ``event_id`` is already present is skipped
+        (``ON CONFLICT ... DO NOTHING``). Returns ``{"replayed", "skipped",
+        "remaining"}``; ``remaining`` is 0 after a fully successful resync. If
+        the store is still down the spool is left intact for the next attempt.
+        """
+        with self._lock:
+            pending = self._spool.entries()
+        if not pending:
+            return {"replayed": 0, "skipped": 0, "remaining": 0}
+        replayed = 0
+        skipped = 0
+        try:
+            with self._state.connection() as conn:
+                for raw in pending:
+                    cur = conn.execute(
+                        _AUDIT_INSERT_SQL + " RETURNING event_id",
+                        (
+                            str(raw.get("event_id")),
+                            str(raw.get("action", "")),
+                            str(raw.get("actor", "")),
+                            str(raw.get("resource", "")),
+                            str(raw.get("decision", "")),
+                            str(raw.get("reason", "")),
+                            str(raw.get("timestamp", "")),
+                            raw.get("correlation_id"),
+                            json.dumps(dict(raw.get("payload") or {}), sort_keys=True, default=str),
+                        ),
+                    )
+                    if cur.fetchone() is not None:
+                        replayed += 1
+                    else:
+                        skipped += 1
+        except Exception:  # noqa: BLE001 - store still down; keep the spool intact
+            return {"replayed": replayed, "skipped": skipped, "remaining": self._spool.count()}
+        with self._lock:
+            self._spool.remove({str(r.get("event_id")) for r in pending})
+        return {"replayed": replayed, "skipped": skipped, "remaining": self._spool.count()}
 
 
 class PostgreSQLApiKeyStore:
