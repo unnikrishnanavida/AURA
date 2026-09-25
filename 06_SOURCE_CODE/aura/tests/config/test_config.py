@@ -43,6 +43,28 @@ def test_load_settings() -> None:
     assert config.environment is Environments.PRODUCTION
     assert config.storage.backend == "sqlite"
 
+def test_load_settings_honors_environment_variables(monkeypatch) -> None:
+    """load_settings() (CLI path) must not ignore AURA_* env vars (P28-2)."""
+    monkeypatch.setenv("AURA_ENVIRONMENT", "production")
+    monkeypatch.setenv("AURA_STORAGE_BACKEND", "sqlite")
+    config = load_settings()
+    assert config.environment is Environments.PRODUCTION
+    assert config.storage.backend == "sqlite"
+
+
+def test_load_settings_explicit_environment_still_forces() -> None:
+    """An explicitly non-default environment argument keeps forcing the value."""
+    config = load_settings(
+        environment="production",
+        overrides={"storage": {"backend": "sqlite", "sqlite_path": ":memory:"}},
+    )
+    assert config.environment is Environments.PRODUCTION
+
+
+def test_load_settings_defaults_to_development_without_overrides(monkeypatch) -> None:
+    monkeypatch.delenv("AURA_ENVIRONMENT", raising=False)
+    config = load_settings()
+    assert config.environment is Environments.DEV
 
 def test_production_rejects_in_memory_storage() -> None:
     with pytest.raises(ConfigurationError):

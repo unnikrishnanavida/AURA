@@ -125,21 +125,24 @@ def load_settings(
 ) -> AuraConfig:
     """Convenience loader producing validated settings.
 
-    Defaults are merged from a development-safe base, then environment,
-    file, and overrides are applied before a single validation pass — so a
-    production config is validated as a whole (never rejected mid-build).
+    Layer precedence (later wins):
+
+      1. built-in defaults (development-safe base)
+      2. config file (``config_path`` or ``AURA_CONFIG``)
+      3. ``AURA_*`` environment variables
+      4. an explicitly non-default ``environment`` argument
+      5. ``overrides``
+
+    The ``environment`` argument only forces a value when it differs from the
+    development default, so ``load_settings()`` (e.g. from the CLI) honors
+    ``AURA_ENVIRONMENT`` / ``AURA_STORAGE_*`` instead of silently ignoring them
+    (Phase 28 production-baseline finding).
     """
     validate_environment(environment)
-    raw: dict[str, Any] = AuraConfig().model_dump()
-    raw["environment"] = _coerce_scalars(environment)
-    if config_path:
-        raw.update(ConfigLoader._read_file(Path(config_path)))
-    if overrides:
-        raw.update(_coerce_scalars(overrides))
-    try:
-        return AuraConfig.model_validate(raw)
-    except Exception as exc:  # pydantic ValidationError
-        raise ConfigurationError(f"invalid configuration: {exc}") from exc
+    merged: dict[str, Any] = dict(overrides or {})
+    if environment != Environments.DEV.value and "environment" not in merged:
+        merged["environment"] = environment
+    return ConfigLoader().load(config_path=config_path, overrides=merged)
 
 
 __all__ = ["ConfigLoader", "load_settings", "validate_environment"]

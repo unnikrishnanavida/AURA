@@ -9,6 +9,7 @@ Run:  python scripts/security_check.py
 
 from __future__ import annotations
 
+import ast
 import pathlib
 import re
 
@@ -19,10 +20,12 @@ HIGH_RISK = (
     (r"os\.system\s*\(", "os.system usage"),
     (r"subprocess\.(run|Popen|call|check_output)\s*\([^)]*shell\s*=\s*True", "shell=True subprocess"),
     (r"pickle\.(loads|load)\s*\(", "untrusted pickle deserialization"),
-    (r"eval\s*\(", "eval on dynamic input"),
-    (r"exec\s*\(", "exec on dynamic input"),
     (r"yaml\.load\s*\([^)]*Loader\s*=\s*yaml\.(FullLoader|UnsafeLoader|Loader)", "unsafe yaml loader"),
 )
+
+# eval/exec are detected structurally via the AST (real Call nodes only), so
+# quoted string literals that merely *mention* "eval(" / "exec(" (e.g. the
+# prompt-injection marker list) are never misreported as dynamic execution.
 
 SECRET_PATTERNS = (
     (r"password\s*=\s*['\"][^'\"]+['\"]", "hardcoded password"),
@@ -30,6 +33,24 @@ SECRET_PATTERNS = (
     (r"secret\s*=\s*['\"][^'\"]{8,}['\"]", "hardcoded secret"),
     (r"BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY", "embedded private key"),
 )
+
+
+def _dynamic_call_sites(base: pathlib.Path) -> list[str]:
+    """Flag real ``eval(...)`` / ``exec(...)`` Call nodes under ``base``."""
+    findings: list[str] = []
+    for path in sorted(base.rglob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError, OSError):
+            continue
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id in {"eval", "exec"}
+            ):
+                findings.append(f"{path.relative_to(ROOT)}: {node.func.id}() call at line {node.lineno}")
+    return findings
 
 
 def scan() -> int:
@@ -50,6 +71,7 @@ def scan() -> int:
                         if match.group(0).rstrip("'\"").endswith("="):
                             continue
                         failures.append(f"{path.relative_to(ROOT)}: {label}: {match.group(0)}")
+    failures.extend(_dynamic_call_sites(ROOT / "src"))
 
     if failures:
         print("SECURITY FAILURES:")

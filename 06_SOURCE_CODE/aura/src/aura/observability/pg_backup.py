@@ -81,6 +81,10 @@ def create_pg_backup(
     module intentionally stays deterministic and dependency-free.
     """
     dest = Path(backup_dir)
+    # The backup directory must exist before the export is written beside the
+    # manifest (Phase 28 backup/restore drill finding: a fresh backup_dir path
+    # previously crashed with FileNotFoundError).
+    dest.mkdir(parents=True, exist_ok=True)
     stamp = time.time()
     backup_name = f"aura-{instance_id}-{int(stamp * 1000)}.sql"
     backup_path = dest / backup_name

@@ -38,6 +38,65 @@ def _get(port: int, path: str, *, token: str | None = None) -> tuple[int, dict]:
     body = json.loads(response.read().decode())
     conn.close()
     return response.status, body
+def test_server_close_releases_memory_store() -> None:
+    """AuraApiServer.close() deterministically closes the memory store (P28-1)."""
+    closed: list[str] = []
+
+    class _Store:
+        def close(self) -> None:
+            closed.append("closed")
+
+    class _Memory:
+        def __init__(self) -> None:
+            self.store = _Store()
+
+    class _Brain:
+        def __init__(self) -> None:
+            self.memory = _Memory()
+
+    class _Aura:
+        def __init__(self) -> None:
+            self.brain = _Brain()
+
+    api = AuraApiServer(aura=_Aura(), config=ServerConfig(host="127.0.0.1", port=0))
+    assert closed == []
+    api.close()
+    assert closed == ["closed"]
+    api.close()  # must not raise when called again
+    assert closed == ["closed", "closed"]
+
+
+def test_server_close_skips_store_without_close() -> None:
+    """Stores without a close() (e.g. in-memory) are skipped, never an error."""
+
+    class _Brain:
+        def __init__(self) -> None:
+            self.memory = type("_Memory", (), {"store": object()})()
+
+    class _Aura:
+        def __init__(self) -> None:
+            self.brain = _Brain()
+
+    api = AuraApiServer(aura=_Aura(), config=ServerConfig(host="127.0.0.1", port=0))
+    api.close()
+    api.close()
+
+
+def test_server_close_closes_distributed_state_pool() -> None:
+    """The distributed-state connection pool is released on close (P28-3)."""
+    pool_closed: list[str] = []
+
+    class _Pool:
+        def close(self) -> None:
+            pool_closed.append("pool-closed")
+
+    api = AuraApiServer(aura=object(), config=ServerConfig(host="127.0.0.1", port=0))
+    api._distributed_state = _Pool()
+    assert pool_closed == []
+    api.close()
+    assert pool_closed == ["pool-closed"]
+    api.close()
+    assert pool_closed == ["pool-closed", "pool-closed"]
 
 
 def _post(port: int, path: str, payload: dict) -> tuple[int, dict]:

@@ -828,6 +828,24 @@ class AuraApiServer:
 
         return Handler
 
+    def close(self) -> None:
+        """Release application resources owned by the server.
+
+        Closes the memory store connection and the distributed-state connection
+        pool so database handles (e.g. the SQLite WAL file lock, the PostgreSQL
+        pool threads) are released deterministically on shutdown instead of
+        relying on process exit. Safe to call more than once; resources
+        without a ``close`` (e.g. the in-memory store) are skipped.
+        """
+        store = getattr(getattr(getattr(self.aura, "brain", None), "memory", None), "store", None)
+        close_store = getattr(store, "close", None)
+        if callable(close_store):
+            close_store()
+        state = getattr(self, "_distributed_state", None)
+        close_state = getattr(state, "close", None)
+        if callable(close_state):
+            close_state()
+
     def run(self) -> None:
         server = ThreadingHTTPServer((self.config.host, self.config.port), self._handler())
         self.logger.info("aura-api listening", host=self.config.host, port=str(self.config.port))
@@ -837,6 +855,7 @@ class AuraApiServer:
             self.logger.info("aura-api shutting down")
         finally:
             server.server_close()
+            self.close()
 
 
 def _env_float(name: str, *, default: float) -> float:

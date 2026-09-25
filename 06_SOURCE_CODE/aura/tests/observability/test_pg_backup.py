@@ -97,6 +97,20 @@ def test_pg_backup_and_restore_roundtrip(pg_database: str) -> None:
         reopened.close()
 
 
+def test_pg_backup_creates_missing_backup_dir(pg_database: str) -> None:
+    """A fresh (non-existent) backup_dir must be created, not crash (P28-5)."""
+    root = Path(tempfile.mkdtemp(prefix="pg-backup-mkdir-"))
+    fresh = root / "nested" / "backups"  # does not exist yet
+    assert not fresh.exists()
+    result = create_pg_backup(
+        dsn=pg_database,
+        backup_dir=str(fresh),
+        instance_id="test",
+        environment="testing",
+    )
+    assert Path(result.path).exists()
+    assert (fresh / "manifest.json").exists()
+    assert result.size_bytes > 0
 def test_pg_backup_rejects_non_aura_file(pg_database: str) -> None:
     tmp = Path(tempfile.mkdtemp(prefix="pg-backup-"))
     bad = tmp / "bad.sql"

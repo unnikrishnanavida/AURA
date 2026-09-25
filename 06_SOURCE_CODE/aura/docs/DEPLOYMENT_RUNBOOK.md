@@ -95,9 +95,30 @@ python 06_SOURCE_CODE/evaluation/clean_install_test.py --with-tests
 python 06_SOURCE_CODE/evaluation/container_verify.py
 ```
 
-## Operational notes
+## Phase 28 production-baseline verification (2026-09-25)
 
-- Data volume for SQLite: `/data` (bind-mount or named volume).
+Behavior verified in the Phase 28 acceptance gate that operators should rely on:
+
+- **Clean install** — `python -m build --wheel` + `pip install` into a fresh
+  isolated venv, then `aura doctor` / `aura config validate` / `aura run`,
+  API startup on a throwaway port, health/readiness, authentication, normal
+  operation, shutdown, restart with data retained. No dependency on developer
+  machine state, stale cache, or the deleted `C:\Users\navid\Desktop\AURA`
+  path (all 16,909 tracked files audited: **0 references**).
+- **Environment parity** — the CLI configuration path (`load_settings`) honors
+  the same `AURA_*` environment variables as the API server
+  (`AURA_ENVIRONMENT`, `AURA_STORAGE_BACKEND`, `AURA_API_SECRET`), so a single
+  environment file/injection drives both `aura config validate` and
+  `run_server`.
+- **Clean shutdown** — `AuraApiServer.close()` releases the memory store
+  connection and the distributed-state connection pool deterministically
+  (SQLite WAL lock is released before process exit; PostgreSQL pool threads are
+  joined). `run_server` invokes it in the shutdown path.
+- **Backup/restore** — `create_pg_backup(dsn=..., backup_dir=...)` creates the
+  backup directory itself (a fresh path no longer fails). Backup→restore
+  round-trip, the no-clobber safety gate, and the SQLite file-copy drill are
+  covered by regression tests and were executed against a real PostgreSQL 18
+  instance during the gate.
 - Backup: see `docs/BACKUP_AND_RECOVERY.md`.
 - Rollback: see `docs/ROLLBACK_RUNBOOK.md`.
 - Alerting: rules are specified in `docs/OBSERVABILITY.md`; wire your own

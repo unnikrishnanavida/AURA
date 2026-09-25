@@ -2,6 +2,31 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 28 — Production Baseline Acceptance (2026-09-25)
+
+- Verified from evidence: clean install (isolated venv; wheel build + install;
+  CLI `doctor`/`config validate`/`run`; API startup/health/auth/operation/
+  shutdown/restart with data retained), canonical-path audit (**0** stale
+  `C:\Users\navid` references across all 16,909 tracked files), TLS edge +
+  two-instance PostgreSQL topology (live cross-instance sessions/memory/limits
+  over HTTP), security baseline, release security (`pip-audit` clean after
+  upgrading pip 25.3→26.2.1, `npm audit` 0, repo secret scan clean,
+  CycloneDX SBOM with 78 components), and real PostgreSQL + SQLite
+  backup/restore drills.
+- **Findings fixed** (each with a regression test):
+  - P28-1/P28-3 — clean shutdown: `AuraApiServer.close()` releases the memory
+    store and the distributed-state pool (SQLite WAL lock + pool threads).
+  - P28-2 — `load_settings()` ignored `AURA_*` env vars; the CLI now honors the
+    same layered config as the API server.
+  - P28-5 — `create_pg_backup` crashed on a fresh backup directory; it now
+    creates it.
+  - `scripts/security_check.py` now detects `eval`/`exec` via the AST (real
+    Call nodes) so quoted markers such as the prompt-injection literals are not
+    misreported.
+- **359/359** tests pass (full suite incl. real-PostgreSQL integration);
+  mypy strict clean; ruff clean.
+- Full detail: `06_SOURCE_CODE/aura/PHASE_28_PRODUCTION_BASELINE_ACCEPTANCE_REPORT.md`.
+
 ### Phase 27 — Durable Audit + Production Reliability (2026-09-25)
 
 - Audit records now carry a stable `event_id`
