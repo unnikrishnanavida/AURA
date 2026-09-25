@@ -1,8 +1,14 @@
-"""Provider contracts and profiles."""
+"""Provider contracts and profiles.
+
+Defines the canonical provider contract (:class:`Provider`), the declarative
+:class:`ProviderProfile`, the ONE :class:`ProviderRegistry` (profiles + runtime
+instances), and the policy/usage primitives used by the manager.
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any
 
 from aura.foundation.errors import CapabilityError, NotFoundError
 
@@ -26,19 +32,105 @@ class ProviderProfile:
         return required in self.capabilities
 
 
+class Provider:
+    """Canonical runtime provider contract.
+
+    Subclasses implement :meth:`reason` (generation/reasoning) and may override
+    :meth:`health`, and must set ``profile`` (instance or class attribute).
+    """
+
+    name: str = "provider"
+    kind: str = "reasoning"
+    timeout_seconds: float = 15.0
+    profile: ProviderProfile | None = None
+
+    def health(self) -> bool:
+        """Return True when the provider is usable right now."""
+        return True
+
+    def reason(self, question: str, **kwargs: Any) -> Any:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderPolicy:
+    """Policy filter applied during provider selection (never bypassed)."""
+
+    required_capability: str | None = "reasoning.synthesis"
+    require_local: bool = False
+    require_privacy_approved: bool = True
+    cost_budget: float | None = None
+    latency_budget_ms: float | None = None
+    allow_fallback: bool = True
+
+
+@dataclass
+class ProviderUsage:
+    """Aggregate usage/failure counters at the provider boundary."""
+
+    calls: int = 0
+    failures: int = 0
+    timeouts: int = 0
+    policy_rejections: int = 0
+    total_latency_ms: float = 0.0
+    by_provider: dict[str, int] = field(default_factory=dict)
+
+    def note_provider(self, name: str) -> None:
+        self.by_provider[name] = self.by_provider.get(name, 0) + 1
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "calls": self.calls,
+            "failures": self.failures,
+            "timeouts": self.timeouts,
+            "policy_rejections": self.policy_rejections,
+            "total_latency_ms": round(self.total_latency_ms, 3),
+            "by_provider": dict(self.by_provider),
+        }
+
+
 class ProviderRegistry:
-    """Registry of known providers with deterministic selection."""
+    """The single registry of provider profiles AND runtime instances."""
 
     def __init__(self) -> None:
         self._providers: dict[str, ProviderProfile] = {}
+        self._instances: dict[str, Provider] = {}
+        self._default: str | None = None
 
     def register(self, profile: ProviderProfile) -> None:
         self._providers[profile.name] = profile
+
+    def register_instance(self, provider: Provider, profile: ProviderProfile | None = None) -> None:
+        """Register a runtime instance together with its profile."""
+        resolved = profile or getattr(provider, "profile", None)
+        if resolved is None:
+            raise ValueError(f"provider {provider!r} has no profile; pass one explicitly")
+        self._providers[resolved.name] = resolved
+        self._instances[resolved.name] = provider
+        if self._default is None:
+            self._default = resolved.name
+
+    def set_default(self, name: str) -> None:
+        if name not in self._providers:
+            raise NotFoundError(f"provider not registered: {name}")
+        self._default = name
+
+    @property
+    def default(self) -> str | None:
+        return self._default
 
     def get(self, name: str) -> ProviderProfile:
         if name not in self._providers:
             raise NotFoundError(f"provider not registered: {name}")
         return self._providers[name]
+
+    def get_instance(self, name: str) -> Provider:
+        if name not in self._instances:
+            raise NotFoundError(f"provider instance not registered: {name}")
+        return self._instances[name]
+
+    def instances(self) -> list[Provider]:
+        return [self._instances[name] for name in sorted(self._instances)]
 
     def select(
         self,
@@ -77,4 +169,10 @@ class ProviderRegistry:
         return sorted(self._providers)
 
 
-__all__ = ["ProviderProfile", "ProviderRegistry"]
+__all__ = [
+    "Provider",
+    "ProviderPolicy",
+    "ProviderProfile",
+    "ProviderRegistry",
+    "ProviderUsage",
+]

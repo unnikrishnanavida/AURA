@@ -9,12 +9,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from aura.providers.base import ProviderProfile
+from aura.providers.base import Provider, ProviderProfile
 
 
 @dataclass
-class EmbeddedReasoningProvider:
-    """Adapter exposing the reasoning engine behind the provider contract."""
+class EmbeddedReasoningProvider(Provider):
+    """Adapter exposing the reasoning engine behind the provider contract.
+
+    This adapter deliberately does NOT claim ``reasoning.synthesis``: the
+    embedded provider IS the multi-strategy reasoner, so the manager never
+    routes synthesis back into it (that would recurse). It is always registered
+    so registry discovery/health work without any remote credentials.
+    """
 
     profile: ProviderProfile = ProviderProfile(
         name="embedded",
@@ -26,12 +32,16 @@ class EmbeddedReasoningProvider:
         local=True,
         privacy_approved=True,
     )
+    timeout_seconds: float = 30.0
 
     def __init__(self, seed: int | None = None) -> None:
         from aura.reasoning.engine import ReasoningEngine
 
         self._engine = ReasoningEngine(seed=seed)
         self.seed = seed
+
+    def health(self) -> bool:
+        return True
 
     def reason(self, question: str, **kwargs: Any) -> Any:
         from aura.reasoning.engine import ReasoningInput

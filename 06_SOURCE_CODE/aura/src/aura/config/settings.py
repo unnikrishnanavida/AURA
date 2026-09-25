@@ -83,6 +83,39 @@ class StorageConfig(BaseModel):
         return normalized
 
 
+class ProviderConfig(BaseModel):
+    """Remote model-provider configuration (Phase 29 provider runtime).
+
+    ``enabled=False`` by default: AURA runs the deterministic embedded provider
+    unless an operator explicitly configures a remote endpoint. ``api_key`` is
+    a :class:`SecretStr` and is redacted in every safe dump/log.
+    """
+
+    enabled: bool = False
+    name: str = "default"
+    kind: str = "openai"  # openai | ollama (OpenAI-compatible chat completions)
+    base_url: str = ""
+    model: str = ""
+    api_key: SecretStr | None = None
+    timeout_seconds: float = 15.0
+    privacy_approved: bool = False
+
+    @field_validator("kind")
+    @classmethod
+    def _validate_kind(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"openai", "ollama"}:
+            raise ValueError(f"unknown provider kind {value!r}; expected openai|ollama")
+        return normalized
+
+    @field_validator("timeout_seconds")
+    @classmethod
+    def _validate_timeout(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("provider timeout_seconds must be positive")
+        return value
+
+
 class AuraConfig(BaseModel):
     """Root configuration object. Loaded and validated by :class:`ConfigLoader`."""
 
@@ -94,6 +127,7 @@ class AuraConfig(BaseModel):
     engines: EngineConfig = Field(default_factory=EngineConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     provider_api_key: SecretStr | None = None
+    provider: ProviderConfig | None = None
     secrets: dict[str, SecretStr] = Field(default_factory=dict)
 
     @field_validator("instance_id")
@@ -118,6 +152,11 @@ class AuraConfig(BaseModel):
         """Dump config with all secret values redacted. Never log raw secrets."""
         dumped = self.model_dump(mode="json")
         dumped["provider_api_key"] = "***REDACTED***" if self.provider_api_key is not None else None
+        if self.provider is not None:
+            dumped["provider"] = dict(dumped.get("provider") or {})
+            dumped["provider"]["api_key"] = (
+                "***REDACTED***" if self.provider.api_key is not None else None
+            )
         dumped["secrets"] = {k: "***REDACTED***" for k in self.secrets}
         return dumped
 
@@ -129,5 +168,6 @@ __all__ = [
     "EngineConfig",
     "Environments",
     "LoggingConfig",
+    "ProviderConfig",
     "StorageConfig",
 ]

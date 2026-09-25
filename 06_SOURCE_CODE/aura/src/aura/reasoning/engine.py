@@ -47,9 +47,11 @@ class ReasoningResult:
     answer: str
     confidence: float
     uncertainty: UncertaintyLevel
+    provider_name: str | None = None
+    provider_synthesized: bool = False
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "question": self.question,
             "answer": self.answer,
             "confidence": self.confidence,
@@ -58,6 +60,12 @@ class ReasoningResult:
             "trace": self.trace.lines(),
             "conclusions": [c.to_dict() for c in self.conclusions],
         }
+        if self.provider_name is not None:
+            payload["provider"] = {
+                "name": self.provider_name,
+                "synthesized": self.provider_synthesized,
+            }
+        return payload
 
 
 class ReasoningEngine:
@@ -76,8 +84,9 @@ class ReasoningEngine:
         ),
         seed: int | None = None,
         similarity_threshold: float = 0.3,
+        provider_manager: Any | None = None,
     ) -> None:
-        del seed  # reproducibility handled by SeededRandom in providers; strategies are deterministic
+        del seed  # reproducibility handled by SeededRandom; strategies are deterministic
         unknown = [name for name in enabled if name not in _STRATEGIES]
         if unknown:
             raise ValueError(f"unknown reasoning strategies: {unknown}")
@@ -85,6 +94,9 @@ class ReasoningEngine:
         self._consensus = ConsensusEngine()
         self._verification = VerificationEngine()
         self._similarity_threshold = similarity_threshold
+        # Phase 29: optional provider boundary for final safe synthesis.
+        # Never set by default — the deterministic path is preserved.
+        self._provider_manager = provider_manager
 
     def _strategy(self, name: str) -> Any:
         if name == "analogical":
@@ -127,6 +139,23 @@ class ReasoningEngine:
         else:
             answer = verdict.answer or primary.statement
 
+        # Phase 29 provider boundary: safe structured synthesis. Only when (a) a
+        # provider manager is configured AND (b) the deterministic outcome is
+        # evidence-supported (never override contested / insufficient / uncertain
+        # results, which are authoritative for uncertainty-first reasoning).
+        provider_name: str | None = None
+        provider_synthesized = False
+        if self._provider_manager is not None and self._may_synthesize(verification, verdict, inp):
+            synthesized = self._provider_manager.synthesize(
+                question=inp.question,
+                conclusions=tuple(conclusions),
+                verification=verification.to_dict() if hasattr(verification, "to_dict") else str(verification),
+            )
+            if synthesized:
+                answer = synthesized
+                provider_name = self._provider_manager.last_provider
+                provider_synthesized = True
+
         return ReasoningResult(
             question=inp.question,
             conclusions=tuple(conclusions),
@@ -136,6 +165,21 @@ class ReasoningEngine:
             answer=answer,
             confidence=round(confidence, 6),
             uncertainty=uncertainty,
+            provider_name=provider_name,
+            provider_synthesized=provider_synthesized,
+        )
+
+    @staticmethod
+    def _may_synthesize(verification: Any, verdict: Any, inp: Any) -> bool:
+        """True only when an evidence-supported outcome may be polished by a provider."""
+        observed = getattr(inp, "observed_propositions", None)
+        return not (
+            getattr(verification, "status", "confirmed") in {"contested", "insufficient"}
+            or getattr(verdict, "agreement", None) == "uncertain"
+            or (
+                observed
+                and len(observed) < int(getattr(inp, "min_evidence", 0) or 0)
+            )
         )
 
     @staticmethod

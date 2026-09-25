@@ -2,6 +2,29 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 29 — Canonical Provider Runtime Integration (2026-09-25)
+
+- The canonical reasoning path (SDK → Brain → Reasoning) now genuinely enters
+  **one** provider boundary (`ProviderManager` + single `ProviderRegistry` with
+  profile AND runtime instances) instead of a dead abstraction.
+- Safe structured synthesis: after consensus + verification, an evidence-backed
+  outcome may be polished by a policy-approved synthesis provider; contested /
+  insufficient / uncertain results are never overridden (uncertainty-first
+  preserved). Provider receives conclusions + verification only — never hidden
+  chain-of-thought.
+- Real HTTP adapters (OpenAI-compatible + Ollama) with credential-safe,
+  transport-injectable clients; live calls classified **NOT VERIFIED** (no
+  external credentials available).
+- `provider_failure` metric now fires at the real boundary (metrics + audit +
+  usage), exactly once per failure; failures fall back to the deterministic
+  path, never propagate.
+- Config: `ProviderConfig` (enabled/kind/base_url/model/api_key/timeout/
+  privacy_approved), `SecretStr` redacted in safe dumps; `AURA_PROVIDER_*` env.
+- Tests: provider manager, remote adapter (injected transport), reasoning
+  synthesis, brain end-to-end — all pass; runtime verification against a real
+  local HTTP endpoint (+ closed-endpoint failure path) passed.
+- Full detail: `06_SOURCE_CODE/aura/PHASE_29_CANONICAL_PROVIDER_RUNTIME_REPORT.md`.
+
 ### Phase 28 — Production Baseline Acceptance (2026-09-25)
 
 - Verified from evidence: clean install (isolated venv; wheel build + install;

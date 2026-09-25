@@ -22,6 +22,7 @@ from aura.observability.metrics import Metrics
 from aura.observability.provenance import ProvenanceGraph
 from aura.planning.engine import PlanningEngine
 from aura.planning.models import Goal, Task
+from aura.providers.manager import build_provider_manager
 from aura.reasoning.engine import ReasoningEngine, ReasoningInput, ReasoningResult
 from aura.reasoning.models import Case, Rule
 from aura.reflection.engine import ReflectionEngine
@@ -50,7 +51,7 @@ class BrainResult:
     steps: list[StepSummary] = field(default_factory=list)
 
     def summary(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "execution_id": str(self.execution_id),
             "correlation_id": str(self.correlation_id),
             "answer": self.reasoning.answer if self.reasoning else None,
@@ -61,6 +62,12 @@ class BrainResult:
             "reflections": [s.to_dict() for s in self.reflections],
             "steps": [s.to_dict() for s in self.steps],
         }
+        if self.reasoning is not None and self.reasoning.provider_name is not None:
+            payload["provider"] = {
+                "name": self.reasoning.provider_name,
+                "synthesized": self.reasoning.provider_synthesized,
+            }
+        return payload
 
 
 class BrainEngine:
@@ -78,6 +85,7 @@ class BrainEngine:
         clock: Clock,
         config: AuraConfig,
         logger: Any,
+        provider_manager: Any = None,
     ) -> None:
         self.memory = memory
         self.knowledge = knowledge
@@ -90,6 +98,7 @@ class BrainEngine:
         self.clock = clock
         self.config = config
         self.logger = logger
+        self.provider_manager = provider_manager
 
     @classmethod
     def create(
@@ -100,6 +109,7 @@ class BrainEngine:
         seed: int | None = None,
         memory_store: Any | None = None,
         recorder: Any = None,
+        provider_manager: Any = None,
     ) -> BrainEngine:
         from aura.memory.engine import MemoryEngine
         from aura.observability.logging import get_logger
@@ -108,10 +118,15 @@ class BrainEngine:
         clk = clock or SystemClock()
         store = memory_store if memory_store is not None else _memory_store_from_config(cfg, clk)
         metrics = Metrics()
+        if provider_manager is None:
+            provider_manager = build_provider_manager(cfg, metrics=metrics)
         return cls(
             memory=MemoryEngine(store=store, clock=clk, metrics=metrics),
             knowledge=KnowledgeBase(),
-            reasoning=ReasoningEngine(seed=seed if seed is not None else cfg.engines.reasoning_seed),
+            reasoning=ReasoningEngine(
+                seed=seed if seed is not None else cfg.engines.reasoning_seed,
+                provider_manager=provider_manager,
+            ),
             planning=PlanningEngine(),
             reflection=ReflectionEngine(),
             learning=LearningEngine(),
@@ -120,6 +135,7 @@ class BrainEngine:
             clock=clk,
             config=cfg,
             logger=get_logger("aura.brain"),
+            provider_manager=provider_manager,
         )
 
     def health(self) -> dict[str, object]:
