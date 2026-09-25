@@ -2,6 +2,23 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 30 — Canonical Ten-Layer Security (2026-09-25)
+
+- Implemented the missing canonical controls (previous layers were already
+  real and tested): **incident response** (`security/incident.py` — lifecycle,
+  severity, evidence, escalation, audit), **threat detection** (`security/threats.py`
+  — brute-force / rate-abuse / privilege-violation detectors → incidents),
+  **privacy** (`security/privacy.py` — classification, allowlist redaction,
+  retention, safe purge guidance), **encryption** (`security/encryption.py` —
+  Fernet via `cryptography`, key management, rotation, no plaintext fallback),
+  and **compliance readiness** (`security/compliance.py` — controls, evidence,
+  status, audit history; no certification claims).
+- Ten layers mapped to canonical implementation in
+  `06_SOURCE_CODE/aura/PHASE_30_CANONICAL_TEN_LAYER_SECURITY_REPORT.md`.
+- Negative tests: illegal lifecycle transitions, de-escalation, threat
+  thresholds, redaction drops, encryption rotation/missing-key failure.
+- mypy strict clean; ruff clean; full suite green.
+
 ### Phase 29 — Canonical Provider Runtime Integration (2026-09-25)
 
 - The canonical reasoning path (SDK → Brain → Reasoning) now genuinely enters
