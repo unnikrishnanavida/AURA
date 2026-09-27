@@ -2,6 +2,21 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 35 — Final Ecosystem Integration (2026-09-25)
+
+- **End-to-end scenarios A–G** (`tests/e2e/test_scenarios.py`, 7 tests):
+  auth→reason→provider→audit; memory persistence across sessions;
+  evidence→answer→provenance; planning + default-deny authorization;
+  brute-force→incident; DB failure→spool→replay; provider failure→fallback.
+- **Local performance baseline** (`scripts/benchmark_phase35.py`):
+  deterministic reason ~0.17 ms/call, with synthesis provider ~0.18 ms/call,
+  memory write ~0.005 ms/call (LOCAL ONLY).
+- Docs: `docs/TESTING.md`, `docs/PERFORMANCE.md`, `docs/PROVIDERS.md`.
+- Hygiene: removed untracked migration-stray `query` files; throwaway PG
+  cluster removed.
+- Final gate: **419/419** tests pass (exit 0) with live PostgreSQL 18.
+- Report: `06_SOURCE_CODE/aura/PHASE_35_FINAL_ECOSYSTEM_INTEGRATION_REPORT.md`.
+
 ### Phase 34 — Mobile Product (2026-09-25)
 
 - `aura.clients.mobile.MobileClient` — offline-first mobile client on the SAME
