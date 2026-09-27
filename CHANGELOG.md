@@ -2,6 +2,33 @@
 
 ## [0.2.0] — 2026-Q3
 
+### Phase 36 — Staging Deployment & External Integration Acceptance (2026-09-27)
+
+- **Isolated staging deployment verified** against a real PostgreSQL 18.3
+  throwaway cluster (canonical, unmodified runtime): fresh-DB migration
+  (`version=1`), health/ready probes, 401/201 auth, reason, memory
+  write + recall, audit durability **across a separate-process restart**
+  (recall n=1, audited 429 denials n=2 — both survive restart; exit 0).
+- **Rate limiting live-tested** against the deployed server: tight-bucket
+  exhaustion probe `[200, 200, 429, 429]`; denials durably audit-logged.
+- **Backup/restore/rollback drill** on staging DB: export (825 B) → truncate →
+  restore (`memory_entries` 1) → second restore **refused** (no-clobber gate).
+- **Bounded HTTP load** (200 req, 8×25, real PG): pre-set threshold p95
+  < 500 ms passed at **p95 115.4 ms**; 0 errors; ~140.6 req/s — local staging
+  box only, not production-scale evidence.
+- **Gates re-run green**: backend **419/419 (exit 0)**, web **16/16**, E2E
+  **7/7**, clients **10/10**, mypy strict clean, ruff clean, `security_check`
+  clean. Mechanical lint fix in `tests/e2e/test_scenarios.py` (import order +
+  3 forward-ref annotations) for ruff 0.16.x drift — no test logic changed.
+- **Classification retained**: backend core **Class C (staging ready)** — not
+  promoted to B; full ecosystem **Class D**. Live providers, container runtime,
+  operator TLS certs, browser E2E, and desktop/mobile packaging remain
+  BLOCKED/MISSING/NOT RUN (no credentials/toolchains — nothing fabricated).
+- **Incident note**: external tooling mutated non-canonical trees
+  (`aura-api`/`aura-agents`) mid-phase; all tracked content restored from
+  `HEAD`, canonical runtime unaffected (see report §7.6).
+- Report: `06_SOURCE_CODE/aura/PHASE_36_STAGING_ACCEPTANCE_REPORT.md`.
+
 ### Phase 35 — Final Ecosystem Integration (2026-09-25)
 
 - **End-to-end scenarios A–G** (`tests/e2e/test_scenarios.py`, 7 tests):

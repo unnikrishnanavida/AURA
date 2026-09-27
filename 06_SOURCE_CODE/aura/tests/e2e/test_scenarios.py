@@ -113,7 +113,8 @@ def test_scenario_c_evidence_answer_is_recorded_with_provenance() -> None:
 
 def test_scenario_d_plan_requires_authorization_and_default_deny() -> None:
     from aura.planning.models import Goal, Task
-    from aura.security.permissions import Decision, Identity, PolicyEngine, Rule as PolicyRule
+    from aura.security.permissions import Decision, Identity, PolicyEngine
+    from aura.security.permissions import Rule as PolicyRule
 
     brain = _brain()
     plan = brain.planning.plan(
@@ -157,18 +158,18 @@ def test_scenario_f_db_failure_spools_then_replays(tmp_path: Path) -> None:
             self.fail = False
             self.inserted: dict[str, object] = {}
 
-        def connection(self) -> "Toggle":
+        def connection(self) -> Toggle:
             if self.fail:
                 raise RuntimeError("db down")
             return self
 
-        def __enter__(self) -> "Toggle":
+        def __enter__(self) -> Toggle:
             return self
 
         def __exit__(self, *exc: object) -> bool:
             return False
 
-        def transaction(self) -> "Toggle":
+        def transaction(self) -> Toggle:
             return self
 
         def execute(self, sql: str, params: object = None) -> _Cursor:

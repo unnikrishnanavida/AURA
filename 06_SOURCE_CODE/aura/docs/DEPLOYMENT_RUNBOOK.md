@@ -123,3 +123,36 @@ Behavior verified in the Phase 28 acceptance gate that operators should rely on:
 - Rollback: see `docs/ROLLBACK_RUNBOOK.md`.
 - Alerting: rules are specified in `docs/OBSERVABILITY.md`; wire your own
   delivery platform (none is built in).
+
+## Local isolated staging (verified playbook, Phase 36)
+
+A fully reproducible staging deployment of the canonical runtime over a real
+PostgreSQL cluster, with zero production/system exposure. This is the exact
+procedure exercised and PASSED in Phase 36 (see
+`PHASE_36_STAGING_ACCEPTANCE_REPORT.md`).
+
+```
+# 1) throwaway PostgreSQL cluster (isolated, loopback only)
+initdb -D <work>/pgstaging_data -U postgres -A trust -E UTF8 --no-locale
+pg_ctl  -D <work>/pgstaging_data -o "-p 55499 -h 127.0.0.1" -l <work>/pgstaging.log start
+
+# 2) deploy canonical application vs staging DB (fresh process)
+python <aura>/build/staging_driver.py write     # migrates DB, seeds, runs staged round
+# 3) restart = new process, same DB
+python <aura>/build/staging_driver.py read      # proves persistence across restart
+# 4) backup/restore drill + bounded HTTP load (thresholds defined pre-run)
+python <aura>/build/stage36_h2.py
+# 5) teardown
+pg_ctl -D <work>/pgstaging_data stop -m fast
+```
+
+Notes:
+
+- The staging driver is evidence tooling under `<aura>/build/` (gitignored);
+  the application code deployed is the unmodified canonical runtime.
+- Staging DBs are dedicated and empty at start; the app applies migration
+  `version=1` itself.
+- Rate-limiting and audit checks use throwaway tokens masked in output; all
+  staging data lives in the throwaway cluster and is destroyed at teardown.
+- Classify any attempt to reach live external providers or real cloud systems
+  separately; the staged E2E in this playbook is provider-free and deterministic.
