@@ -111,3 +111,37 @@ def test_memory_is_not_global() -> None:
     engine_a.remember(key="private", kind=MemoryType.WORKING, content={"secret": True})
     assert engine_a.store.count() == 1
     assert engine_b.store.count() == 0
+
+
+# -- MEM-1: user/project scope isolation --------------------------------------
+
+
+def test_memory_scope_isolation() -> None:
+    engine = make_engine()
+    engine.remember(key="alpha", kind=MemoryType.SEMANTIC, content={"v": 1}, scope="user:a/project:hms")
+    engine.remember(key="beta", kind=MemoryType.SEMANTIC, content={"v": 2}, scope="user:b/project:other")
+    engine.remember(key="unscoped", kind=MemoryType.SEMANTIC, content={"v": 3})
+
+    alpha = engine.recall(MemoryQuery(text="", scope="user:a/project:hms"))
+    assert [e.key for e in alpha] == ["alpha"]
+    beta = engine.recall(MemoryQuery(text="", scope="user:b/project:other"))
+    assert [e.key for e in beta] == ["beta"]
+    # An unfiltered recall remains backwards compatible (no scope -> no filter).
+    assert {e.key for e in engine.recall(MemoryQuery(text=""))} == {"alpha", "beta", "unscoped"}
+
+
+def test_memory_scope_roundtrip_via_create() -> None:
+    engine = make_engine()
+    entry = engine.remember(key="scoped", kind=MemoryType.EPISODIC, content={"v": 1}, scope="p/s")
+    assert entry.scope == "p/s"
+    restored = engine.get(entry.id)
+    assert restored.scope == "p/s"
+
+
+def test_memory_scope_empty_value_rejected() -> None:
+    engine = make_engine()
+    with pytest.raises(ValueError):
+        engine.remember(key="x", kind=MemoryType.WORKING, content={}, scope="  ")
+    engine.remember(key="y", kind=MemoryType.WORKING, content={}, scope="ok")
+    with pytest.raises(ValueError):
+        engine.recall(MemoryQuery(text="", scope=" "))

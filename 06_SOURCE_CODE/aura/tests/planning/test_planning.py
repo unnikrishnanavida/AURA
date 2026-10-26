@@ -52,6 +52,31 @@ def test_validator_rejects_empty_tasks() -> None:
     assert not validation.valid
 
 
+def test_validator_rejects_dependency_cycle() -> None:
+    tasks = [Task(name="a", prerequisites=("b",)), Task(name="b", prerequisites=("a",))]
+    validation = PlanValidator().validate(goal=make_goal(), tasks=tasks)
+    assert not validation.valid
+    assert any("circular dependency" in issue for issue in validation.issues)
+
+
+def test_validator_rejects_self_dependency_cycle() -> None:
+    tasks = [Task(name="a", prerequisites=("a",))]
+    validation = PlanValidator().validate(goal=make_goal(), tasks=tasks)
+    assert not validation.valid
+    assert any("circular dependency" in issue for issue in validation.issues)
+
+
+def test_validator_cycle_plus_unknown_dependency() -> None:
+    tasks = [
+        Task(name="a", prerequisites=("b",)),
+        Task(name="b", prerequisites=("a", "ghost")),
+    ]
+    validation = PlanValidator().validate(goal=make_goal(), tasks=tasks)
+    assert not validation.valid
+    assert any("unknown task" in issue for issue in validation.issues)
+    assert any("circular dependency" in issue for issue in validation.issues)
+
+
 def test_validator_missing_capability() -> None:
     validation = PlanValidator().validate(
         goal=make_goal(),
@@ -83,6 +108,14 @@ def test_planning_engine_validation_failure() -> None:
     result = PlanningEngine().plan(goal=make_goal(), tasks=[])
     assert result.primary is None
     assert result.issues
+
+
+def test_planning_engine_rejects_dependency_cycle_without_raising() -> None:
+    tasks = [Task(name="a", prerequisites=("b",)), Task(name="b", prerequisites=("a",))]
+    result = PlanningEngine().plan(goal=make_goal(), tasks=tasks)
+    assert result.primary is None
+    assert result.validation is not None and not result.validation.valid
+    assert any("circular dependency" in issue for issue in result.issues)
 
 
 def test_plan_alternatives_generated() -> None:

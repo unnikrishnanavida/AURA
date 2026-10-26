@@ -122,6 +122,7 @@ class MemoryEntry:
     last_access: datetime = field(default_factory=lambda: SystemClock().now())
     access_count: int = 0
     tags: tuple[str, ...] = ()
+    scope: str | None = None
     expires_at: datetime | None = None
     links: dict[str, LinkKind] = field(default_factory=dict)
     sensitivity: Sensitivity = Sensitivity.INTERNAL
@@ -148,11 +149,14 @@ class MemoryEntry:
         clock: Clock | None = None,
         expires_at: datetime | None = None,
         tags: tuple[str, ...] = (),
+        scope: str | None = None,
         memory_id: MemoryId | None = None,
         sensitivity: Sensitivity = Sensitivity.INTERNAL,
         observed_at: datetime | None = None,
         retention: RetentionPolicy | None = None,
     ) -> MemoryEntry:
+        if scope is not None and not scope.strip():
+            raise ValueError("memory scope must be a non-empty string when provided")
         now = (clock or SystemClock()).now()
         return cls(
             id=memory_id or MemoryId.new(),
@@ -166,6 +170,7 @@ class MemoryEntry:
             last_access=now,
             expires_at=expires_at,
             tags=tags,
+            scope=scope,
             sensitivity=sensitivity,
             observed_at=observed_at,
             retention=retention,

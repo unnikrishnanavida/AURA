@@ -21,10 +21,10 @@ describe("ConsolePage", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders the reasoning form", () => {
+  it("renders the chat surface", () => {
     render(<ConsoleHarness />);
-    expect(screen.getByRole("heading", { name: "Reasoning console" })).toBeTruthy();
-    expect(screen.getByLabelText("Question")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "How can I help you today?" })).toBeTruthy();
+    expect(screen.getByLabelText("Ask AURA anything")).toBeTruthy();
   });
 
   it("displays a structured answer from the API", async () => {
@@ -44,17 +44,17 @@ describe("ConsolePage", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<ConsoleHarness />);
-    const input = screen.getByLabelText("Question");
+    const input = screen.getByLabelText("Ask AURA anything");
     fireEvent.change(input, { target: { value: "is it safe?" } });
-    fireEvent.click(screen.getByRole("button", { name: "Reason" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
 
     await waitFor(() => {
       expect(screen.getByText("yes")).toBeTruthy();
     });
-    expect(screen.getAllByText("0.9").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.90").length).toBeGreaterThan(0);
   });
 
-  it("shows an error message when the API fails", async () => {
+  it("shows a friendly error instead of the raw API message", async () => {
     const fetchMock = vi.fn(async () => {
       return new Response(JSON.stringify({ error: { code: "api.error", message: "boom" } }), {
         status: 500,
@@ -63,13 +63,14 @@ describe("ConsolePage", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(<ConsoleHarness />);
-    const input = screen.getByLabelText("Question");
+    const input = screen.getByLabelText("Ask AURA anything");
     fireEvent.change(input, { target: { value: "x?" } });
-    fireEvent.click(screen.getByRole("button", { name: "Reason" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
 
     await waitFor(() => {
-      expect(screen.getByText(/boom/)).toBeTruthy();
+      expect(screen.getByRole("alert")).toBeTruthy();
     });
+    expect(screen.queryByText(/boom/)).toBeNull();
   });
 });
 

@@ -1,0 +1,88 @@
+/* =====================================================================
+   AURA — "The AI Ecosystem" design tokens.
+   Near-black cinematic surfaces, metallic gold primary with violet /
+   electric-blue / cyan secondaries and soft glows. Declared after
+   index.css so the brand palette re-themes every component.
+   ===================================================================== */
+
+:root {
+  /* Surfaces — deep blacks (reference: #03050A → #0B0F18) */
+  --bg: #030508;
+  --bg-2: #070a0f;
+  --bg-3: #0a0e14;
+  --panel: rgba(7, 11, 17, 0.92);
+  --panel-solid: #080c12;
+  --panel-elevated: #0c121b;
+  --panel-front: #111a25;
+
+  /* Hairlines and borders */
+  --border: rgba(125, 147, 177, 0.16);
+  --border-soft: rgba(125, 147, 177, 0.1);
+  --border-strong: rgba(125, 147, 177, 0.3);
+  --border-gold: rgba(214, 168, 74, 0.34);
+
+  /* Text */
+  --text: #eef3ff;
+  --text-strong: #f6f9ff;
+  --muted: #9aa7b8;
+  --muted-2: #667486;
+
+  /* Gold scale (reference #C99A3D → #F4D58A) */
+  --gold-1: #c99a3d;
+  --gold-2: #d6a84a;
+  --gold-3: #e7c76a;
+  --gold-4: #f4d58a;
+  --accent: #d6a84a;
+  --accent-hover: #e7c76a;
+  --accent-strong: #f4d58a;
+
+  /* Secondaries — violet / electric blue / cyan */
+  --violet: #8657e6;
+  --violet-bright: #a78bfa;
+  --blue: #4f8cff;
+  --blue-bright: #7fb2ff;
+  --cyan: #22d3ee;
+  --accent-violet: var(--violet);
+  --accent-blue: var(--blue);
+
+  /* Semantic */
+  --error: #ff6b6b;
+  --ok: #3fd38a;
+  --warn: #ffb454;
+
+  /* Brand gradients */
+  --grad-gold: linear-gradient(135deg, #f4d58a 0%, #d6a84a 48%, #c99a3d 100%);
+  --grad-metal: linear-gradient(180deg, #f4d58a 0%, #e0b456 55%, #c99a3d 100%);
+  --grad-text: linear-gradient(115deg, #f4d58a 0%, #e7c76a 100%);
+  --grad-aura: linear-gradient(
+    135deg,
+    rgba(214, 168, 74, 0.92) 0%,
+    rgba(134, 87, 230, 0.88) 52%,
+    rgba(79, 140, 255, 0.88) 100%
+  );
+
+  /* Glows */
+  --glow-gold: 0 0 26px rgba(214, 168, 74, 0.42);
+  --glow-gold-soft: 0 0 16px rgba(214, 168, 74, 0.26);
+  --glow-violet: 0 0 26px rgba(134, 87, 230, 0.42);
+  --glow-blue: 0 0 24px rgba(79, 140, 255, 0.36);
+  --glow-cyan: 0 0 18px rgba(34, 211, 238, 0.28);
+
+  /* Elevation and focus */
+  --elevation-1: 0 3px 12px rgba(0, 0, 0, 0.28);
+  --elevation-2: 0 18px 48px -20px rgba(0, 0, 0, 0.76);
+  --focus-ring: 0 0 0 3px rgba(167, 139, 250, 0.26);
+
+  /* Shape and motion */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --motion-fast: 140ms;
+  --motion-normal: 240ms;
+
+  /* Type */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+}

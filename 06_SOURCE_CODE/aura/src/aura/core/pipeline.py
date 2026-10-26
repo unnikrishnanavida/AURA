@@ -18,6 +18,7 @@ the same request produces the same decisions.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -25,6 +26,7 @@ from aura.brain.engine import BrainEngine
 from aura.execution.engine import ExecutionEngine, ExecutionRequest, ExecutionResult
 from aura.execution.models import ActionInputs, WorldState
 from aura.execution.registry import ActionRegistry
+from aura.foundation.cancellation import CancellationToken
 from aura.foundation.ids import CorrelationId, ExecutionId
 from aura.learning.engine import LearningResult
 from aura.learning.loop import LearningLoop
@@ -146,7 +148,10 @@ class ExecutionPipeline:
         memory_lifecycle: MemoryLifecycle | None = None,
         learning_loop: LearningLoop | None = None,
         audit: AuditLog | None = None,
+        max_parallel: int = 4,
     ) -> None:
+        if max_parallel < 1:
+            raise ValueError("max_parallel must be >= 1 (1 disables parallel scheduling)")
         self.brain = brain or BrainEngine.create()
         self.research = research or ResearchEngine()
         self.planning = planning or PlanningEngine()
@@ -158,9 +163,15 @@ class ExecutionPipeline:
         self.memory_lifecycle = memory_lifecycle or MemoryLifecycle(engine=self.brain.memory)
         self.learning_loop = learning_loop or LearningLoop()
         self.audit = audit or AuditLog()
+        self.max_parallel = max_parallel
 
     # -- pipeline ------------------------------------------------------------
-    def run(self, request: PipelineRequest) -> PipelineResult:
+    def run(
+        self,
+        request: PipelineRequest,
+        *,
+        cancellation: CancellationToken | None = None,
+    ) -> PipelineResult:
         correlation = CorrelationId.new()
         execution_id = ExecutionId.new()
         steps: list[StageRecord] = []
@@ -170,6 +181,8 @@ class ExecutionPipeline:
         learning: LearningResult | None = None
 
         self._record("pipeline.started", execution_id, correlation, {"question": request.question})
+        if cancellation is not None:
+            cancellation.check()
 
         # 1. MEMORY context
         remembered = self.brain.memory.recall(MemoryQuery(text=request.question, limit=5))
@@ -215,7 +228,9 @@ class ExecutionPipeline:
                 facts.setdefault(finding.claim, round(finding.confidence, 6))
 
         # 4. REASONING
-        reasoning_result = self.brain.reason(question=request.question, facts=facts)
+        reasoning_result = self.brain.reason(
+            question=request.question, facts=facts, cancellation=cancellation
+        )
         steps.append(
             StageRecord(
                 "reasoning",
@@ -237,61 +252,19 @@ class ExecutionPipeline:
                 )
             )
             self._record("pipeline.stage", execution_id, correlation, {"stage": "planning"})
-# 6. SECURITY + EXECUTION for every planned step
+# 6. SECURITY + EXECUTION for every planned step (dependency-aware,
+        # bounded-parallel scheduling of independent tasks; deterministic order).
         plan_steps = plan.primary.steps if plan and plan.primary else []
-        for step in plan_steps:
-            task = step.task
-            gate = self.guardrails.check(
-                action=task.capability,
-                resource=request.resource,
-                identity=request.identity,
-                risk=task.risk,
-                approval=request.approval,
-                cost=task.estimated_cost,
-                tokens=0,
-            )
-            security.append({"task": task.name, "allowed": gate.allowed, "reason": gate.reason})
-            self.audit.record(
-                action=task.capability,
-                actor=request.identity.id if request.identity else "anonymous",
-                resource=request.resource,
-                decision="allow" if gate.allowed else "deny",
-                reason=gate.reason,
-                correlation_id=str(correlation),
-            )
-            if not gate.allowed:
-                steps.append(StageRecord("security", False, f"{task.name}: {gate.reason}"))
-                continue
-            if not self.registry.has(task.name):
-                steps.append(StageRecord("execution", False, f"action {task.name!r} not registered"))
-                continue
-            steps.append(StageRecord("security", True, f"{task.name}: {gate.reason}"))
-
-            inputs = ActionInputs(values=dict(request.action_inputs.get(task.name, {})))
-            world = WorldState(values=dict(request.world))
-            result = self.execution.execute(
-                ExecutionRequest(
-                    action=task.name,
-                    inputs=inputs,
-                    world_state=world,
-                    execution_id=execution_id,
-                    approval=request.approval,
-                )
-            )
-            executions.append(result)
-            self._record(
-                "pipeline.action",
-                execution_id,
-                correlation,
-                {"action": task.name, "ok": result.ok, "attempts": result.attempts},
-            )
-            steps.append(
-                StageRecord(
-                    "execution",
-                    result.ok,
-                    f"{task.name}: ok={result.ok} attempts={result.attempts} replayed={result.replayed}",
-                )
-            )
+        self._dispatch_tasks(
+            plan_steps,
+            request,
+            execution_id,
+            correlation,
+            steps,
+            security,
+            executions,
+            cancellation,
+        )
 
         # 7. OBSERVATION + VERIFICATION
         requires_execution = bool(plan_steps)
@@ -406,6 +379,149 @@ class ExecutionPipeline:
             success=success,
             steps=steps,
         )
+
+    # -- scheduling ---------------------------------------------------------
+    def _dispatch_tasks(
+        self,
+        plan_steps: Any,
+        request: PipelineRequest,
+        execution_id: ExecutionId,
+        correlation: CorrelationId,
+        steps: list[StageRecord],
+        security: list[dict[str, object]],
+        executions: list[ExecutionResult],
+        cancellation: CancellationToken | None,
+    ) -> None:
+        """Execute planned steps in dependency waves (ORCH-1).
+
+        Each wave contains only tasks whose prerequisites are all satisfied —
+        independent by construction — so it is safe to run them concurrently on
+        a bounded thread pool (``max_parallel``). Results are collected back in
+        plan order, so pipeline results stay deterministic. Cancellation is
+        checked before every wave; a cancelled request never schedules new work
+        and marks remaining tasks as cancelled.
+        """
+        if not plan_steps:
+            return
+        pending: dict[str, Any] = {step.task.name: step for step in plan_steps}
+        completed: set[str] = set()
+        while pending:
+            if cancellation is not None and cancellation.cancelled:
+                for name in list(pending):
+                    steps.append(
+                        StageRecord("execution", False, f"{name}: cancelled before execution")
+                    )
+                return
+            ready = [
+                name for name, step in pending.items() if step.prerequisites_met(completed)
+            ]
+            if not ready:
+                # Cycle guard (defensive: the plan validator rejects cycles
+                # upstream, so this branch is unreachable in normal operation).
+                for name in list(pending):
+                    steps.append(
+                        StageRecord(
+                            "execution", False, f"{name}: unresolved dependency; not executed"
+                        )
+                    )
+                    del pending[name]
+                return
+            with ThreadPoolExecutor(max_workers=min(self.max_parallel, len(ready))) as pool:
+                futures = {
+                    name: pool.submit(
+                        self._execute_one_task,
+                        pending[name],
+                        request,
+                        execution_id,
+                        correlation,
+                        cancellation,
+                    )
+                    for name in ready
+                }
+                for name in ready:
+                    local_steps, local_security, local_executions = futures[name].result()
+                    steps.extend(local_steps)
+                    security.extend(local_security)
+                    executions.extend(local_executions)
+            completed.update(ready)
+            for name in ready:
+                del pending[name]
+
+    def _execute_one_task(
+        self,
+        step: Any,
+        request: PipelineRequest,
+        execution_id: ExecutionId,
+        correlation: CorrelationId,
+        cancellation: CancellationToken | None,
+    ) -> tuple[list[StageRecord], list[dict[str, object]], list[ExecutionResult]]:
+        """Run the full gate -> audit -> execute sequence for one planned task.
+
+        Runs on a worker thread when tasks are dispatched in parallel. All
+        shared state it touches is thread-guarded (budget tracker, flight
+        recorder, execution idempotency set). It returns *local* record lists
+        that the dispatcher merges in deterministic plan order, so concurrent
+        completion order never leaks into results.
+        """
+        task = step.task
+        local_steps: list[StageRecord] = []
+        local_security: list[dict[str, object]] = []
+        local_executions: list[ExecutionResult] = []
+        gate = self.guardrails.check(
+            action=task.capability,
+            resource=request.resource,
+            identity=request.identity,
+            risk=task.risk,
+            approval=request.approval,
+            cost=task.estimated_cost,
+            tokens=0,
+        )
+        local_security.append({"task": task.name, "allowed": gate.allowed, "reason": gate.reason})
+        self.audit.record(
+            action=task.capability,
+            actor=request.identity.id if request.identity else "anonymous",
+            resource=request.resource,
+            decision="allow" if gate.allowed else "deny",
+            reason=gate.reason,
+            correlation_id=str(correlation),
+        )
+        if not gate.allowed:
+            local_steps.append(StageRecord("security", False, f"{task.name}: {gate.reason}"))
+            return local_steps, local_security, local_executions
+        if not self.registry.has(task.name):
+            local_steps.append(
+                StageRecord("execution", False, f"action {task.name!r} not registered")
+            )
+            return local_steps, local_security, local_executions
+        local_steps.append(StageRecord("security", True, f"{task.name}: {gate.reason}"))
+
+        inputs = ActionInputs(values=dict(request.action_inputs.get(task.name, {})))
+        world = WorldState(values=dict(request.world))
+        result = self.execution.execute(
+            ExecutionRequest(
+                action=task.name,
+                inputs=inputs,
+                world_state=world,
+                execution_id=execution_id,
+                approval=request.approval,
+            ),
+            cancellation=cancellation,
+        )
+        local_executions.append(result)
+        self._record(
+            "pipeline.action",
+            execution_id,
+            correlation,
+            {"action": task.name, "ok": result.ok, "attempts": result.attempts},
+        )
+        local_steps.append(
+            StageRecord(
+                "execution",
+                result.ok,
+                f"{task.name}: ok={result.ok} attempts={result.attempts} replayed={result.replayed}",
+            )
+        )
+        return local_steps, local_security, local_executions
 
     # -- helpers -------------------------------------------------------------
     def _record(

@@ -241,6 +241,7 @@ class MemoryLifecycle:
                     "importance": entry.importance,
                     "confidence": entry.confidence.combined,
                     "sensitivity": entry.sensitivity.value,
+                    "scope": entry.scope,
                     "provenance": entry.provenance.source,
                     "created_at": entry.created_at.isoformat() if entry.created_at else None,
                     "version": entry.version,

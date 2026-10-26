@@ -161,3 +161,136 @@ def test_reasoning_only_request_needs_no_execution() -> None:
     assert result.plan is None
     assert result.executions == []
     assert result.reasoning["answer"] is not None
+
+
+# -- ORCH-1: dependency-aware bounded-parallel scheduling ----------------------
+
+
+def _sleeping_action(name: str, *, seconds: float, capability: str = "sleep.run") -> ActionSpec:
+    import time
+
+    def handler(_inputs: object, _token: CancellationToken) -> object:
+        time.sleep(seconds)
+        return make_result(ok=True, output={"done": name})
+
+    return ActionSpec(
+        name=name,
+        capability=capability,
+        handler=handler,
+        expected_effects=("done",),
+        timeout_seconds=5,
+    )
+
+
+def test_independent_tasks_run_in_parallel() -> None:
+    import time as _time
+
+    registry = ActionRegistry()
+    registry.register(_sleeping_action("a", seconds=0.4))
+    registry.register(_sleeping_action("b", seconds=0.4))
+    pipeline = ExecutionPipeline(
+        brain=BrainEngine.create(seed=3),
+        registry=registry,
+        guardrails=default_guardrails(registry),
+        max_parallel=4,
+    )
+    request = PipelineRequest(
+        question="run independent tasks",
+        goal=Goal.create(description="run a and b"),
+        tasks=(Task(name="a", capability="sleep.run"), Task(name="b", capability="sleep.run")),
+    )
+    started = _time.monotonic()
+    result = pipeline.run(request)
+    elapsed = _time.monotonic() - started
+    # Sequential execution would take ~0.8s; parallel waves complete in ~0.4s.
+    assert elapsed < 0.75, f"expected parallel execution, took {elapsed:.2f}s"
+    assert [r.request.action for r in result.executions] == ["a", "b"]
+
+
+def test_dependent_tasks_respect_ordering() -> None:
+    registry = ActionRegistry()
+    registry.register(_sleeping_action("a", seconds=0.1))
+    registry.register(_sleeping_action("b", seconds=0.1))
+    pipeline = ExecutionPipeline(
+        brain=BrainEngine.create(seed=3),
+        registry=registry,
+        guardrails=default_guardrails(registry),
+        max_parallel=4,
+    )
+    request = PipelineRequest(
+        question="run ordered tasks",
+        goal=Goal.create(description="b before a"),
+        tasks=(
+            Task(name="b", capability="sleep.run"),
+            Task(name="a", capability="sleep.run", prerequisites=("b",)),
+        ),
+    )
+    result = pipeline.run(request)
+    # Dependency preserved: b executes before a, results in plan order.
+    assert [r.request.action for r in result.executions] == ["b", "a"]
+
+
+def test_cancellation_between_waves_stops_scheduling() -> None:
+    token = CancellationToken()
+
+    def release_handler(_inputs: object, _token: CancellationToken) -> object:
+        import time
+
+        time.sleep(0.2)
+        token.cancel()
+        return make_result(ok=True, output={"released": True})
+
+    registry = ActionRegistry()
+    registry.register(
+        ActionSpec(
+            name="release",
+            capability="release.run",
+            handler=release_handler,
+            expected_effects=("released",),
+            timeout_seconds=5,
+        )
+    )
+    registry.register(_sleeping_action("after", seconds=0.05, capability="after.run"))
+    pipeline = ExecutionPipeline(
+        brain=BrainEngine.create(seed=3),
+        registry=registry,
+        guardrails=default_guardrails(registry),
+        max_parallel=4,
+    )
+    request = PipelineRequest(
+        question="cancel after first wave",
+        goal=Goal.create(description="release then after"),
+        tasks=(
+            Task(name="release", capability="release.run"),
+            Task(name="after", capability="after.run", prerequisites=("release",)),
+        ),
+    )
+    result = pipeline.run(request, cancellation=token)
+    assert [r.request.action for r in result.executions] == ["release"]
+    assert any(
+        "after: cancelled before execution" in s.detail for s in result.steps
+    ), "the unstarted task must be marked cancelled"
+
+
+def test_max_parallel_one_disables_parallelism() -> None:
+    import time as _time
+
+    registry = ActionRegistry()
+    registry.register(_sleeping_action("a", seconds=0.3))
+    registry.register(_sleeping_action("b", seconds=0.3))
+    pipeline = ExecutionPipeline(
+        brain=BrainEngine.create(seed=3),
+        registry=registry,
+        guardrails=default_guardrails(registry),
+        max_parallel=1,
+    )
+    request = PipelineRequest(
+        question="sequential",
+        goal=Goal.create(description="a and b"),
+        tasks=(Task(name="a", capability="sleep.run"), Task(name="b", capability="sleep.run")),
+    )
+    started = _time.monotonic()
+    result = pipeline.run(request)
+    elapsed = _time.monotonic() - started
+    assert elapsed >= 0.55, f"expected sequential execution, took {elapsed:.2f}s"
+    assert [r.request.action for r in result.executions] == ["a", "b"]

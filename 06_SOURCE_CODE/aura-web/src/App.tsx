@@ -1,63 +1,153 @@
 import { useState } from "react";
-import { AuditPage } from "./pages/AuditPage";
-import { ConsolePage } from "./pages/ConsolePage";
+import {
+  BookOpen,
+  Database,
+  FileText,
+  FlaskConical,
+  House,
+  Network,
+  Settings,
+  ShieldCheck,
+  Stethoscope,
+} from "lucide-react";
+import { AuraLogo } from "./components/aura/AuraLogo";
+import { ProfileMenu } from "./components/chat/ProfileMenu";
+import { StatusPill } from "./components/chat/StatusPill";
+import { AuthGate } from "./lib/auth-gate";
+import { DiagnosticsPage } from "./pages/DiagnosticsPage";
+import { DocumentsPage } from "./pages/DocumentsPage";
+import { HomePage } from "./pages/HomePage";
+import { KnowledgeGraphPage } from "./pages/KnowledgeGraphPage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import { MemoryPage } from "./pages/MemoryPage";
 import { ResearchPage } from "./pages/ResearchPage";
+import { SecurityLogPage } from "./pages/SecurityLogPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { StatusPage } from "./pages/StatusPage";
-import { AuthGate } from "./lib/auth-gate";
-import { useSettings } from "./lib/settings-context";
 
-const TABS = [
-  { id: "status", label: "Status", node: <StatusPage /> },
-  { id: "console", label: "Reasoning", node: <ConsolePage /> },
-  { id: "memory", label: "Memory", node: <MemoryPage /> },
-  { id: "knowledge", label: "Knowledge", node: <KnowledgePage /> },
-  { id: "research", label: "Research", node: <ResearchPage /> },
-  { id: "audit", label: "Audit", node: <AuditPage /> },
-  { id: "settings", label: "Settings", node: <SettingsPage /> },
+const NAV_GROUPS = [
+  {
+    group: "Workspace",
+    items: [
+      { id: "home", label: "Home", icon: House },
+      { id: "memory", label: "Memory", icon: Database },
+      { id: "documents", label: "Documents", icon: FileText },
+      { id: "research", label: "Research", icon: FlaskConical },
+    ],
+  },
+  {
+    group: "Knowledge",
+    items: [
+      { id: "knowledge", label: "Knowledge", icon: BookOpen },
+      { id: "graph", label: "Knowledge Graph", icon: Network },
+    ],
+  },
+  {
+    group: "Advanced",
+    items: [
+      { id: "diagnostics", label: "Diagnostics", icon: Stethoscope },
+      { id: "security", label: "Security Log", icon: ShieldCheck },
+      { id: "settings", label: "Settings", icon: Settings },
+    ],
+  },
 ] as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof NAV_GROUPS)[number]["items"][number]["id"];
+
+const ACTIVE_LABELS = NAV_GROUPS.map((g) => g.items).flat() as Array<{ id: TabId; label: string }>;
 
 function App() {
-  const [active, setActive] = useState<TabId>("status");
-  const { endpoint } = useSettings();
+  const [active, setActive] = useState<TabId>("home");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const activeTab = TABS.find((t) => t.id === active) ?? TABS[0];
+  const activeLabel = ACTIVE_LABELS.find((item) => item.id === active)?.label ?? "Home";
+
+  function navigate(id: string) {
+    setActive(id as TabId);
+    setDrawerOpen(false);
+  }
+
+  function renderPage() {
+    const homePage = <HomePage onNavigate={navigate} />;
+    switch (active) {
+      case "home":
+        return homePage;
+      case "memory":
+        return <MemoryPage />;
+      case "documents":
+        return <DocumentsPage />;
+      case "research":
+        return <ResearchPage />;
+      case "knowledge":
+        return <KnowledgePage />;
+      case "graph":
+        return <KnowledgeGraphPage />;
+      case "diagnostics":
+        return <DiagnosticsPage />;
+      case "security":
+        return <SecurityLogPage />;
+      case "settings":
+        return <SettingsPage />;
+      default:
+        return homePage;
+    }
+  }
 
   return (
-    <div className="shell">
-      <header className="topbar">
-        <h1>AURA Console</h1>
-        <span className="endpoint" title="Configured AURA API endpoint">
-          {endpoint}
-        </span>
-      </header>
-      <nav aria-label="Primary">
-        <ul className="tabs">
-          {TABS.map((tab) => (
-            <li key={tab.id}>
-              <button
-                type="button"
-                className={tab.id === active ? "active" : ""}
-                aria-current={tab.id === active ? "page" : undefined}
-                onClick={() => setActive(tab.id)}
-              >
-                {tab.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <main>
-        <AuthGate>{activeTab.node}</AuthGate>
-      </main>
-      <footer>
-        <p>Every value shown here is fetched live from the configured AURA API. No demo data is injected.</p>
-      </footer>
-    </div>
+    <AuthGate>
+      <div className="shell">
+        <header className="topbar">
+          <button
+            type="button"
+            className="menu-toggle"
+            aria-label="Toggle navigation"
+            aria-expanded={drawerOpen}
+            onClick={() => setDrawerOpen((open) => !open)}
+          >
+            Menu
+          </button>
+          <AuraLogo variant="horizontal" className="topbar-logo" />
+          <h1>{activeLabel}</h1>
+          <StatusPill />
+          <ProfileMenu onNavigate={navigate} />
+        </header>
+        <div className="shell-body">
+          <aside className={drawerOpen ? "sidebar is-open" : "sidebar"} aria-label="Sidebar">
+            <div className="brand" aria-label="AURA">
+              <AuraLogo variant="horizontal" className="brand-logo" />
+            </div>
+            <nav aria-label="Primary" className="sidebar-nav">
+              {NAV_GROUPS.map((group) => (
+                <section key={group.group} aria-label={group.group}>
+                  <h2>{group.group}</h2>
+                  <ul>
+                    {group.items.map((item) => (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          className={item.id === active ? "active" : ""}
+                          aria-current={item.id === active ? "page" : undefined}
+                          onClick={() => navigate(item.id)}
+                        >
+                          <item.icon aria-hidden="true" />
+                          {item.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </nav>
+            <p className="sidebar-foot">AURA · The AI Ecosystem</p>
+          </aside>
+          <div
+            className={drawerOpen ? "sidebar-scrim is-open" : "sidebar-scrim"}
+            onClick={() => setDrawerOpen(false)}
+            aria-hidden="true"
+          />
+          <main className={active === "home" ? "content chat-active" : "content"}>{renderPage()}</main>
+        </div>
+      </div>
+    </AuthGate>
   );
 }
 

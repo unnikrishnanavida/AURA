@@ -6,6 +6,7 @@ from aura.observability.metrics import Metrics
 from aura.providers.base import Provider, ProviderPolicy, ProviderProfile
 from aura.providers.errors import ProviderError, ProviderTimeoutError
 from aura.providers.manager import ProviderManager, build_provider_manager
+from aura.providers.result import ProviderStatus
 from aura.security.audit import AuditLog
 
 
@@ -63,6 +64,66 @@ def test_synthesize_success_path() -> None:
     assert metrics.count("provider_call") == 1
     assert metrics.count("provider_failure") == 0
     assert len(audit.entries()) == 0
+
+
+def test_generate_uses_generation_capability_and_forwards_history() -> None:
+    manager, _, _ = _manager()
+    provider = FakeProvider(name="chat", capability="reasoning.generation", result="A useful answer")
+    manager.register(provider)
+    history = [{"role": "user", "content": "Earlier question"}]
+
+    result = manager.generate(question="What is machine learning?", history=history)
+
+    # The structured contract: callers must be able to tell a real answer from
+    # "no provider ran", so success is asserted on the result, not on a bare str.
+    assert result.ok is True
+    assert result.text == "A useful answer"
+    assert result.status is ProviderStatus.OK
+    assert result.verification == "unverified"  # model output is not verified truth
+    assert provider.calls == 1
+    assert provider.last_kwargs["mode"] == "conversation"
+    assert provider.last_kwargs["history"] == history
+    assert manager.last_provider == "chat"
+    assert manager.usage.calls == 1
+
+
+def test_generate_rejects_remote_provider_without_privacy_approval() -> None:
+    manager, _, _ = _manager()
+    provider = FakeProvider(
+        name="unapproved-chat",
+        capability="reasoning.generation",
+        privacy_approved=False,
+    )
+    manager.register(provider)
+
+    result = manager.generate(question="What is machine learning?")
+    assert result.ok is False
+    assert result.text is None
+    assert result.status is ProviderStatus.UNAUTHORIZED
+    assert provider.calls == 0
+    assert manager.usage.policy_rejections == 1
+
+
+def test_generate_reports_not_configured_rather_than_failing_silently() -> None:
+    """An empty manager must say 'not configured', not raise or return text."""
+    manager, _, _ = _manager()
+    result = manager.generate(question="What is machine learning?")
+    assert result.status is ProviderStatus.NOT_CONFIGURED
+    assert result.text is None
+    assert "no language model provider is configured" in (result.error or "")
+
+
+def test_generate_refuses_when_caller_is_not_authorized() -> None:
+    manager, metrics, _ = _manager()
+    provider = FakeProvider(name="chat", capability="reasoning.generation", result="secret answer")
+    manager.register(provider)
+
+    result = manager.generate(question="What is machine learning?", authorized=False)
+
+    assert result.status is ProviderStatus.UNAUTHORIZED
+    assert result.text is None
+    assert provider.calls == 0  # the provider was never contacted at all
+    assert metrics.count("provider_failure") == 1
 
 
 def test_synthesize_none_when_no_synthesis_provider() -> None:

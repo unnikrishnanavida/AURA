@@ -136,6 +136,7 @@ class SQLiteMemoryStore:
         kind: MemoryType | None = None,
         tags: tuple[str, ...] = (),
         status: MemoryStatus | None = None,
+        scope: str | None = None,
     ) -> list[MemoryEntry]:
         needle = text.strip().lower()
         clauses: list[str] = []
@@ -146,6 +147,9 @@ class SQLiteMemoryStore:
         if status is not None:
             clauses.append("status = ?")
             params.append(status.value)
+        if scope is not None:
+            clauses.append("scope = ?")
+            params.append(scope)
         if needle:
             clauses.append("(key LIKE ? OR content LIKE ?)")
             like = f"%{needle}%"

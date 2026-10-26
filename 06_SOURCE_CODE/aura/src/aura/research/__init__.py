@@ -15,6 +15,7 @@ from aura.research.models import (
     ReproducibilityCapsule,
     ResearchInput,
     ResearchQuestion,
+    ResearchState,
     SourceQuality,
 )
 
@@ -29,5 +30,6 @@ __all__ = [
     "ResearchInput",
     "ResearchOutput",
     "ResearchQuestion",
+    "ResearchState",
     "SourceQuality",
 ]

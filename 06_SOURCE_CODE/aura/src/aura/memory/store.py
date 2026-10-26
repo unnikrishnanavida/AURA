@@ -41,6 +41,7 @@ class MemoryStore(Protocol):
         kind: MemoryType | None = None,
         tags: tuple[str, ...] = (),
         status: MemoryStatus | None = None,
+        scope: str | None = None,
     ) -> list[MemoryEntry]: ...
 
     def all(self) -> Iterator[MemoryEntry]: ...
@@ -88,6 +89,7 @@ class InMemoryMemoryStore:
         kind: MemoryType | None = None,
         tags: tuple[str, ...] = (),
         status: MemoryStatus | None = None,
+        scope: str | None = None,
     ) -> list[MemoryEntry]:
         needle = text.strip().lower()
         results = []
@@ -95,6 +97,8 @@ class InMemoryMemoryStore:
             if kind is not None and entry.kind is not kind:
                 continue
             if status is not None and entry.status is not status:
+                continue
+            if scope is not None and entry.scope != scope:
                 continue
             if tags and not set(tags).issubset(set(entry.tags)):
                 continue

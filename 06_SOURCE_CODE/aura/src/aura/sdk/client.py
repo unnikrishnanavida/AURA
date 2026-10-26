@@ -16,8 +16,9 @@ from typing import Any
 
 from aura.brain.engine import BrainEngine
 from aura.config.settings import AuraConfig
+from aura.foundation.cancellation import CancellationToken
 from aura.foundation.clock import Clock, SystemClock
-from aura.foundation.ids import ExecutionId
+from aura.foundation.ids import CorrelationId, ExecutionId
 from aura.memory.engine import MemoryQuery
 from aura.memory.models import MemoryType
 from aura.planning.models import Goal, Task
@@ -69,8 +70,20 @@ class Aura:
         cases: tuple[Any, ...] = (),
         goal: Goal | None = None,
         tasks: list[Task] | None = None,
+        history: tuple[dict[str, str], ...] = (),
+        scope: str | None = None,
+        provider_authorized: bool = True,
+        cancellation: CancellationToken | None = None,
     ) -> dict[str, Any]:
-        """Run the full cognitive cycle and return a structured answer."""
+        """Run the full cognitive cycle and return a structured answer.
+
+        ``provider_authorized`` is the API layer's 1C decision, carried through
+        unchanged so the provider boundary can never be reached by an
+        unauthorized request. It defaults to True for trusted local/SDK callers.
+        ``cancellation`` is the caller's token: it propagates through the brain
+        into reasoning and the provider transport so an in-flight call can be
+        genuinely interrupted.
+        """
         result = self._brain.reason(
             question=question,
             facts=facts,
@@ -79,18 +92,42 @@ class Aura:
             cases=cases,
             goal=goal,
             tasks=tasks,
+            history=history,
+            scope=scope,
+            provider_authorized=provider_authorized,
+            cancellation=cancellation,
         )
         return result.summary()
 
     def plan(
         self, *, goal: Goal, tasks: list[Task]
     ) -> dict[str, Any]:
-        from aura.planning.engine import PlanningEngine
+        """Create a validated plan through the canonical planning engine.
 
-        engine = PlanningEngine()
-        result = engine.plan(goal=goal, tasks=tasks)
+        Delegates to the brain's planning engine so every plan is
+        flight-recorded and traceable (the SDK never instantiates a second
+        planner). Rejected plans (validation issues, dependency cycles) are
+        recorded as ``plan.rejected`` events instead of raising.
+        """
+        result = self._brain.planning.plan(goal=goal, tasks=list(tasks))
+        correlation = CorrelationId.new()
+        execution = ExecutionId.new()
         if result.primary is None:
+            self._brain.recorder.record(
+                event_type="plan.rejected",
+                source="aura.sdk.plan",
+                execution_id=execution,
+                correlation_id=correlation,
+                payload={"goal": goal.description, "issues": list(result.issues)},
+            )
             return {"plan_created": False, "issues": list(result.issues), "steps": []}
+        self._brain.recorder.record(
+            event_type="plan.created",
+            source="aura.sdk.plan",
+            execution_id=execution,
+            correlation_id=correlation,
+            payload={"plan_id": str(result.primary.id), "steps": result.primary.names},
+        )
         return {
             "plan_created": True,
             "plan_id": str(result.primary.id),
@@ -125,12 +162,15 @@ class Aura:
         *,
         kind: MemoryType = MemoryType.EPISODIC,
         importance: float = 0.5,
+        scope: str | None = None,
     ) -> str:
-        entry = self._brain.memory.remember(key=key, kind=kind, content=content, importance=importance)
+        entry = self._brain.memory.remember(
+            key=key, kind=kind, content=content, importance=importance, scope=scope
+        )
         return str(entry.id)
 
-    def recall(self, text: str, *, limit: int = 5) -> list[dict[str, Any]]:
-        entries = self._brain.memory.recall(MemoryQuery(text=text, limit=limit))
+    def recall(self, text: str, *, limit: int = 5, scope: str | None = None) -> list[dict[str, Any]]:
+        entries = self._brain.memory.recall(MemoryQuery(text=text, limit=limit, scope=scope))
         return [
             {"id": str(e.id), "key": e.key, "kind": e.kind.value, "content": e.content}
             for e in entries
@@ -167,8 +207,15 @@ class Aura:
         *,
         claims: tuple[str, ...] = (),
         evidence: dict[str, tuple[float, str, float]] | None = None,
+        scope: str = "owner:anonymous",
     ) -> dict[str, object]:
-        """Run an evidence-aware research cycle and return the structured output."""
+        """Run an evidence-aware research cycle and return the structured output.
+
+        ``scope`` records the owning identity on the ``research.completed``
+        flight-recorder event so run listings can be owner-isolated server
+        side. It is carried only inside the event payload, never in the
+        research output.
+        """
         from aura.research.engine import ResearchEngine
         from aura.research.models import ResearchInput, ResearchQuestion, SourceQuality
 
@@ -183,6 +230,18 @@ class Aura:
                 claims=claims,
                 evidence=mapped_evidence,  # type: ignore[arg-type]
             )
+        )
+        self._brain.recorder.record(
+            event_type="research.completed",
+            source="aura.sdk.research",
+            execution_id=output.execution_id,
+            correlation_id=CorrelationId.new(),
+            payload={
+                "question": question,
+                "findings": len(output.findings),
+                "epistemic": output.epistemic.value,
+                "scope": scope,
+            },
         )
         return output.to_dict()
 

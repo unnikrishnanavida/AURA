@@ -10,6 +10,33 @@ from typing import Any
 from aura.foundation.ids import ExecutionId, new_hex
 
 
+class ResearchState(StrEnum):
+    """Lifecycle of one research task (distinct from finding epistemology).
+
+    The two are not interchangeable: ``ResearchState`` tracks the research
+    *task* (was it requested / planned / retrieved / verified / failed /
+    cancelled), while :class:`EpistemicStatus` classifies each *finding*'s
+    evidential strength. They must never be conflated -- e.g. a task can be
+    RETRIEVED (evidence assessed) without ever being VERIFIED.
+    """
+
+    #: Research was requested but work has not begun.
+    REQUESTED = "requested"
+    #: The system determined what research needs to be performed.
+    PLANNED = "planned"
+    #: Evidence/source material was actually retrieved (here: supplied
+    #: evidence was assessed by the research engine).
+    RETRIEVED = "retrieved"
+    #: Retrieved evidence passed the available verification rules (at least
+    #: one finding reached EVIDENCE/INFERENCE). Verification is never assumed
+    #: merely because retrieval succeeded.
+    VERIFIED = "verified"
+    #: Research could not complete successfully.
+    FAILED = "failed"
+    #: Research was explicitly cancelled.
+    CANCELLED = "cancelled"
+
+
 class EpistemicStatus(StrEnum):
     """Epistemic strength ladder used by findings and the ledger."""
 
@@ -101,5 +128,6 @@ __all__ = [
     "ReproducibilityCapsule",
     "ResearchInput",
     "ResearchQuestion",
+    "ResearchState",
     "SourceQuality",
 ]

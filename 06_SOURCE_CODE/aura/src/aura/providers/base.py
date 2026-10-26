@@ -43,12 +43,24 @@ class Provider:
     kind: str = "reasoning"
     timeout_seconds: float = 15.0
     profile: ProviderProfile | None = None
+    #: The concrete model this adapter talks to, when it has one. Adapters that
+    #: are not model-backed (the embedded reasoner) leave it as ``None`` -- the
+    #: difference between "no model" and "a model we could name" is preserved.
+    model: str | None = None
 
     def health(self) -> bool:
         """Return True when the provider is usable right now."""
         return True
 
     def reason(self, question: str, **kwargs: Any) -> Any:
+        """Run one provider consultation and return its output.
+
+        Adapters may accept an optional ``cancellation`` keyword -- a
+        :class:`~aura.foundation.cancellation.CancellationToken` -- and use it
+        to abort in-flight work (e.g. the HTTP transport closing the
+        connection). Adapters that cannot interrupt honour the token by simply
+        ignoring it; the manager still checks it before and after the call.
+        """
         raise NotImplementedError
 
 

@@ -1,10 +1,19 @@
 /**
- * Reasoning console: conversation view against the real AURA API.
- * The gear is in src/lib/conversation.tsx (kept component-file friendly).
+ * Chat page — the dedicated full conversation surface (same experience as
+ * the home screen once a conversation has started).
  */
 
 import { Conversation } from "../lib/conversation";
 
-export function ConsolePage() {
-  return <Conversation />;
+interface ConsolePageProps {
+  onNavigate?: (tab: string) => void;
+  onTitleChange?: (title: string) => void;
+}
+
+export function ConsolePage({ onNavigate, onTitleChange }: ConsolePageProps = {}) {
+  return (
+    <div className="page chat-page" aria-label="Chat with AURA">
+      <Conversation onNavigate={onNavigate} onTitleChange={onTitleChange} />
+    </div>
+  );
 }

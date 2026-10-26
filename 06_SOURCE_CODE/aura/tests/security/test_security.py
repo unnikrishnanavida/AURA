@@ -104,7 +104,13 @@ def test_budget_seconds_limit() -> None:
     tracker = BudgetTracker(limits=BudgetLimits(max_seconds=0.001))
     import time
 
-    time.sleep(0.01)
+    # Windows waitable timers can return from sleep() early (observed 0.0s
+    # elapsed), which made this test flaky. Loop until the monotonic clock has
+    # actually advanced past the budget before asserting exhaustion.
+    for _ in range(500):
+        time.sleep(0.002)
+        if tracker.elapsed_seconds >= 0.001:
+            break
     with pytest.raises(BudgetExhaustedError):
         tracker.check()
 

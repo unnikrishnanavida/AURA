@@ -10,13 +10,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from aura.brain.context import ContextAssembler, ContextBudget
+from aura.brain.conversation import route_conversation, route_memory
 from aura.config.settings import AuraConfig
+from aura.foundation.cancellation import CancellationToken
 from aura.foundation.clock import Clock, SystemClock
+from aura.foundation.errors import CancelledError
 from aura.foundation.ids import CorrelationId, ExecutionId
+from aura.input.multimodal import MultimodalObservation
 from aura.knowledge.engine import KnowledgeBase
 from aura.learning.engine import LearningEngine
 from aura.learning.models import LearningSignal
 from aura.memory.engine import MemoryEngine, MemoryQuery
+from aura.memory.models import MemoryType, Provenance
 from aura.observability.flight_recorder import FlightRecorder, InMemoryFlightRecorder
 from aura.observability.metrics import Metrics
 from aura.observability.provenance import ProvenanceGraph
@@ -24,7 +30,7 @@ from aura.planning.engine import PlanningEngine
 from aura.planning.models import Goal, Task
 from aura.providers.manager import build_provider_manager
 from aura.reasoning.engine import ReasoningEngine, ReasoningInput, ReasoningResult
-from aura.reasoning.models import Case, Rule
+from aura.reasoning.models import Case, Grounding, Rule
 from aura.reflection.engine import ReflectionEngine
 from aura.reflection.models import Outcome, ReflectionSignal, SignalKind
 
@@ -49,24 +55,50 @@ class BrainResult:
     reflections: list[ReflectionSignal] = field(default_factory=list)
     learning_signal: LearningSignal | None = None
     steps: list[StepSummary] = field(default_factory=list)
+    direct_answer: str | None = None
+    direct_route: str = "conversation"
+    context: Grounding | None = None
 
     def summary(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "execution_id": str(self.execution_id),
             "correlation_id": str(self.correlation_id),
-            "answer": self.reasoning.answer if self.reasoning else None,
+            "answer": self.direct_answer if self.direct_answer is not None else self.reasoning.answer if self.reasoning else None,
             "confidence": self.reasoning.confidence if self.reasoning else None,
-            "uncertainty": self.reasoning.uncertainty.value if self.reasoning else None,
+            "uncertainty": self.reasoning.uncertainty.value if self.reasoning and self.reasoning.uncertainty else None,
             "plan_created": self.plan_created,
             "plan_steps": self.plan_steps,
             "reflections": [s.to_dict() for s in self.reflections],
             "steps": [s.to_dict() for s in self.steps],
         }
-        if self.reasoning is not None and self.reasoning.provider_name is not None:
-            payload["provider"] = {
-                "name": self.reasoning.provider_name,
-                "synthesized": self.reasoning.provider_synthesized,
+        if self.direct_answer is not None:
+            payload["route"] = self.direct_route
+        if self.context is not None:
+            payload["context"] = self.context.to_dict()
+        if self.reasoning is not None and self.reasoning.grounded:
+            payload["grounded"] = True
+        reasoning = self.reasoning
+        if reasoning is not None and (reasoning.provider_name or reasoning.provider_status):
+            provider: dict[str, Any] = {
+                "status": reasoning.provider_status,
+                "name": reasoning.provider_name,
+                "model": reasoning.provider_model,
+                "local": reasoning.provider_local,
+                "synthesized": reasoning.provider_synthesized,
+                # Model output is an input to verification, never a verified
+                # result. The flag is explicit so no consumer assumes otherwise.
+                "verified": reasoning.provider_verified,
             }
+            if reasoning.provider_mode is not None:
+                provider["mode"] = reasoning.provider_mode
+            if (
+                reasoning.provider_status == "cancelled"
+                and reasoning.provider_cancelled_stage is not None
+            ):
+                provider["cancelled_stage"] = reasoning.provider_cancelled_stage
+            payload["provider"] = provider
+        if reasoning is not None and reasoning.abstention_reason:
+            payload["abstention_reason"] = reasoning.abstention_reason
         return payload
 
 
@@ -86,6 +118,7 @@ class BrainEngine:
         config: AuraConfig,
         logger: Any,
         provider_manager: Any = None,
+        assembler: ContextAssembler | None = None,
     ) -> None:
         self.memory = memory
         self.knowledge = knowledge
@@ -99,6 +132,11 @@ class BrainEngine:
         self.config = config
         self.logger = logger
         self.provider_manager = provider_manager
+        self.assembler = assembler
+
+    @property
+    def context_budget(self) -> ContextBudget:
+        return self.assembler.budget if self.assembler is not None else ContextBudget()
 
     @classmethod
     def create(
@@ -120,9 +158,16 @@ class BrainEngine:
         metrics = Metrics()
         if provider_manager is None:
             provider_manager = build_provider_manager(cfg, metrics=metrics)
+        memory_engine = MemoryEngine(store=store, clock=clk, metrics=metrics)
+        knowledge = KnowledgeBase(state_path=_knowledge_state_path(cfg))
+        assembler = ContextAssembler(
+            memory=memory_engine,
+            knowledge=knowledge,
+            budget=ContextBudget(),
+        )
         return cls(
-            memory=MemoryEngine(store=store, clock=clk, metrics=metrics),
-            knowledge=KnowledgeBase(),
+            memory=memory_engine,
+            knowledge=knowledge,
             reasoning=ReasoningEngine(
                 seed=seed if seed is not None else cfg.engines.reasoning_seed,
                 provider_manager=provider_manager,
@@ -136,6 +181,7 @@ class BrainEngine:
             config=cfg,
             logger=get_logger("aura.brain"),
             provider_manager=provider_manager,
+            assembler=assembler,
         )
 
     def health(self) -> dict[str, object]:
@@ -161,6 +207,11 @@ class BrainEngine:
         likelihoods: dict[str, tuple[float, float]] | None = None,
         goal: Goal | None = None,
         tasks: list[Task] | None = None,
+        history: tuple[dict[str, str], ...] = (),
+        scope: str | None = None,
+        provider_authorized: bool = True,
+        cancellation: CancellationToken | None = None,
+        observations: tuple[MultimodalObservation, ...] = (),
     ) -> BrainResult:
         """Run one cognitive execution — the canonical execution boundary.
 
@@ -169,6 +220,10 @@ class BrainEngine:
         ``execution_failure`` (one event, one increment on each metric) so the
         HighErrorRate alert derives its ratio from live runtime events.
         """
+        # A request cancelled before any work is not an execution attempt:
+        # nothing ran, so nothing "failed" (the client made a decision).
+        if cancellation is not None:
+            cancellation.check()
         self.metrics.increment("execution_count")
         try:
             return self._reason_impl(
@@ -181,7 +236,16 @@ class BrainEngine:
                 likelihoods=likelihoods,
                 goal=goal,
                 tasks=tasks,
+                history=history,
+                scope=scope,
+                provider_authorized=provider_authorized,
+                cancellation=cancellation,
+                observations=observations,
             )
+        except CancelledError:
+            # A mid-flight cancellation is a client decision, not an engine
+            # failure: it must not skew the failure-rate alert.
+            raise
         except Exception:
             self.metrics.increment("execution_failure")
             raise
@@ -198,6 +262,11 @@ class BrainEngine:
         likelihoods: dict[str, tuple[float, float]] | None = None,
         goal: Goal | None = None,
         tasks: list[Task] | None = None,
+        history: tuple[dict[str, str], ...] = (),
+        scope: str | None = None,
+        provider_authorized: bool = True,
+        cancellation: CancellationToken | None = None,
+        observations: tuple[MultimodalObservation, ...] = (),
     ) -> BrainResult:
         correlation = CorrelationId.new()
         execution = ExecutionId.new()
@@ -208,14 +277,102 @@ class BrainEngine:
             correlation_id=correlation,
             payload={"question": question},
         )
-        remembered = self.memory.recall(MemoryQuery(text=question))
+        # Context assembly is the single retrieval boundary for one execution: it
+        # recalls memory, retrieves knowledge, applies the read-path policy and
+        # the context budget, and hands the result to reasoning. Previously the
+        # recall result was counted and then dropped, so nothing the user had
+        # saved ever reached the answer.
+        assembler = self.assembler or ContextAssembler(
+            memory=self.memory,
+            knowledge=self.knowledge,
+            budget=ContextBudget(),
+        )
+        grounding = assembler.assemble(question, history=history, scope=scope, observations=observations)
+        if observations:
+            self.recorder.record(
+                event_type="observation.assembled",
+                source="brain.context",
+                execution_id=execution,
+                correlation_id=correlation,
+                payload={
+                    "count": len(observations),
+                    "modalities": sorted({obs.modality.value for obs in observations}),
+                },
+            )
         self.recorder.record(
             event_type="context.retrieved",
             source="brain.context",
             execution_id=execution,
             correlation_id=correlation,
-            payload={"memories": len(remembered)},
+            payload={
+                "items": len(grounding.items),
+                "dropped": grounding.dropped,
+                "filtered": grounding.filtered,
+                "contradictions": len(grounding.contradictions),
+                "turns": grounding.turns,
+            },
         )
+        memory_command = route_memory(question)
+        if memory_command is not None:
+            if memory_command.action == "remember":
+                self.memory.remember(
+                    key=f"chat:{execution}",
+                    kind=MemoryType.SEMANTIC,
+                    content={"text": memory_command.text},
+                    importance=0.65,
+                    provenance=Provenance(source="brain.conversation.memory", execution_id=execution),
+                    scope=scope,
+                )
+                answer = f"I'll remember that: {memory_command.text}"
+            else:
+                entries = self.memory.recall(
+                    MemoryQuery(text=memory_command.text, limit=5, scope=scope)
+                )
+                remembered_text = [
+                    str(entry.content["text"])
+                    for entry in entries
+                    if isinstance(entry.content.get("text"), str)
+                ]
+                answer = (
+                    "Here's what I remember:\n" + "\n".join(f"- {text}" for text in remembered_text)
+                    if remembered_text
+                    else "I don't have any saved memories about that yet."
+                )
+            self.recorder.record(
+                event_type="decision",
+                source="brain.conversation.memory",
+                execution_id=execution,
+                correlation_id=correlation,
+                payload={"route": "memory", "action": memory_command.action},
+            )
+            result = BrainResult(
+                execution_id=execution,
+                correlation_id=correlation,
+                reasoning=None,
+                direct_answer=answer,
+                direct_route="memory",
+            )
+            result.steps.append(StepSummary("memory", memory_command.action))
+            self._record_provenance(result)
+            return result
+        conversation = route_conversation(question)
+        if conversation is not None:
+            self.recorder.record(
+                event_type="decision",
+                source="brain.conversation",
+                execution_id=execution,
+                correlation_id=correlation,
+                payload={"route": "conversation", "intent": conversation.intent},
+            )
+            result = BrainResult(
+                execution_id=execution,
+                correlation_id=correlation,
+                reasoning=None,
+                direct_answer=conversation.answer,
+            )
+            result.steps.append(StepSummary("conversation", conversation.intent))
+            self._record_provenance(result)
+            return result
         reasoning_input = ReasoningInput(
             question=question,
             facts=dict(facts or {}),
@@ -225,8 +382,16 @@ class BrainEngine:
             prior=prior,
             cases=cases,
             counterfactual_variable="",
+            grounding=grounding,
         )
-        reasoning_result = self.reasoning.reason(reasoning_input)
+        if cancellation is not None:
+            cancellation.check()
+        reasoning_result = self.reasoning.reason(
+            reasoning_input,
+            history=history,
+            provider_authorized=provider_authorized,
+            cancellation=cancellation,
+        )
         self.recorder.record(
             event_type="decision",
             source="brain.interpret",
@@ -235,11 +400,24 @@ class BrainEngine:
             payload={
                 "answer": reasoning_result.answer,
                 "confidence": reasoning_result.confidence,
-                "uncertainty": reasoning_result.uncertainty.value,
+                "uncertainty": reasoning_result.uncertainty.value if reasoning_result.uncertainty else None,
             },
         )
         result = BrainResult(execution_id=execution, correlation_id=correlation, reasoning=reasoning_result)
+        result.context = grounding
         result.steps.append(StepSummary("observation", question))
+        if grounding.items:
+            result.steps.append(
+                StepSummary(
+                    "context",
+                    f"{len(grounding.items)} item(s) "
+                    f"({', '.join(sorted({item.source for item in grounding.items}))})",
+                )
+            )
+        if grounding.contradictions:
+            result.steps.append(
+                StepSummary("context", f"{len(grounding.contradictions)} contradiction(s) detected")
+            )
 
         if goal is not None:
             plan_result = self.planning.plan(goal=goal, tasks=tasks or [])
@@ -342,6 +520,16 @@ def _memory_store_from_config(cfg: AuraConfig, clk: Any) -> Any:
     from aura.memory.factory import create_memory_store
 
     return create_memory_store(cfg, clock=clk)
+
+
+def _knowledge_state_path(cfg: Any) -> str | None:
+    """Optional durable path for knowledge claims (Phase 2A/2C)."""
+    if cfg is None:
+        return None
+    storage = getattr(cfg, "storage", None)
+    if storage is None:
+        return None
+    return getattr(storage, "knowledge_sqlite_path", None)
 
 
 Brain = BrainEngine

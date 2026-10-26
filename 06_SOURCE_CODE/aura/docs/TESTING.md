@@ -13,6 +13,7 @@ aspirational.
 | Failure | `tests/security/test_audit_durable.py`, `tests/observability/test_pg_backup.py`, Phase-28 drills | Simulated store death, torn spools, restore/no-clobber gates |
 | Security | `tests/security/*`, `tests/api/test_tls_proxy.py` | 401/403/429, injection, defense pipeline, incidents, encryption rotation/missing-key |
 | Web | `aura-web` vitest (+ `tsc -b`, eslint) | API client, components, auth gate, conversation (cancel/retry) |
+| Web browser | `scripts/browser_e2e.py`, `scripts/viewport_acceptance.py`, `scripts/research_graph_acceptance.py` | Real Chrome vs. a fresh `AuraApiServer` + Vite: sign-in through the UI, reasoning answer, 4-viewport shell/drawer, populated Research + Knowledge Graph; asserts no page/console errors, no overflow |
 
 ## Running
 

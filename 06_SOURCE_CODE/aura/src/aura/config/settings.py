@@ -68,6 +68,7 @@ class StorageConfig(BaseModel):
 
     backend: str = Field(default="memory")
     sqlite_path: str = Field(default="data/aura.sqlite3")
+    knowledge_sqlite_path: str | None = Field(default=None)
     postgresql_dsn: str | None = Field(default=None)
     postgresql_min_connections: int = Field(default=1, ge=1)
     postgresql_max_connections: int = Field(default=5, ge=1)

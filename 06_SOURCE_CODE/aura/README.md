@@ -1,4 +1,4 @@
-# AURA — Autonomous Universal Reasoning Architecture
+# AURA — Autonomous Unified Reasoning Architecture
 
 AURA is a coherent, integrated intelligence infrastructure. It is not a
 chatbot wrapper and not a collection of disconnected AI engines: memory,
@@ -38,7 +38,7 @@ src/aura/
 ├─ security       capabilities, policies (default deny), safety, autonomy, budgets, guardrails
 │                 + adaptive defense pipeline (evidence → propose → sandbox → approve → canary)
 ├─ observability  structured logs, metrics, flight recorder, provenance graph, replay
-├─ providers      provider profiles + embedded deterministic provider
+├─ providers      deterministic reasoning + optional OpenAI-compatible/Ollama generation
 ├─ brain          cognitive orchestration of the whole lifecycle
 ├─ sdk            `aura.Aura` public facade (reason/plan/reflect/memory/knowledge/research)
 ├─ api            dependency-light HTTP service (health/ready/reason/remember/recall/
@@ -132,8 +132,10 @@ python -m mypy src                # strict typing
 
 ## Key concepts
 
-- **Uncertainty-first:** with insufficient evidence the answer is
-  `"I do not know"` at confidence `0.0` — AURA never invents certainty.
+- **Uncertainty-first:** without a configured generation provider, an
+  evidence-free factual question remains `"I do not know"`; AURA does not
+  fabricate an answer or a confidence score. Clear greetings, identity, and
+  capability questions use a small local conversational route.
 - **Evidence ≠ claim:** knowledge separates claims, evidence, sources,
   verification, and contradiction.
 - **RECORDED ≠ RECONSTRUCTED:** replay flags state origin explicitly; no
@@ -143,8 +145,11 @@ python -m mypy src                # strict typing
 
 ## Limitations
 
-- The embedded reasoning provider is deterministic and offline; external
-  provider SDK adapters are interfaces awaiting credentials.
+- General natural-language answers require an operator-configured,
+  privacy-approved OpenAI-compatible endpoint or local Ollama model. Without
+  one, deterministic reasoning and explicit local conversational intents remain
+  available, while unsupported factual questions honestly return `"I do not
+  know"`.
 - Persistence is in-memory by default; SQLite/PostgreSQL adapters are future work.
 - Kubernetes manifests are intentionally deferred until cluster-validated.
 

@@ -193,6 +193,7 @@ class PostgreSQLMemoryStore:
         kind: MemoryType | None = None,
         tags: tuple[str, ...] = (),
         status: MemoryStatus | None = None,
+        scope: str | None = None,
     ) -> list[MemoryEntry]:
         needle = text.strip().lower()
         clauses: list[str] = []
@@ -203,6 +204,9 @@ class PostgreSQLMemoryStore:
         if status is not None:
             clauses.append("status = %s")
             params.append(status.value)
+        if scope is not None:
+            clauses.append("scope = %s")
+            params.append(scope)
         if needle:
             clauses.append("(key ILIKE %s OR content ILIKE %s)")
             like = f"%{needle}%"

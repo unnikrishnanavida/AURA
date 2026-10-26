@@ -8,14 +8,20 @@
 
 import type {
   AuditRecord,
+  AgentRunResult,
   ClaimEntry,
   HealthResult,
   MemoryEntry,
   MetricSnapshot,
   PlanResult,
+  ProviderStateResponse,
   ReadyResult,
   ReasonResult,
   ResearchOutput,
+  ResearchRunsPage,
+  SecurityLogEntry,
+  TaskCancelled,
+  TaskStatus,
 } from "./types";
 
 export interface ApiConfig {
@@ -109,11 +115,22 @@ export class AuraApi {
           throw new ApiError(0, "sdk.cancelled", "cancelled");
         }
         const isAbort = error instanceof DOMException && error.name === "AbortError";
-        if (isAbort && this.shouldRetry(0, "sdk.timeout", attempt)) {
-          await sleep(100);
-          continue;
+        if (isAbort) {
+          if (this.shouldRetry(0, "sdk.timeout", attempt)) {
+            await sleep(100);
+            continue;
+          }
+          throw new ApiError(0, "sdk.timeout", "request timed out");
         }
-        throw isAbort ? new ApiError(0, "sdk.timeout", "request timed out") : error;
+        if (error instanceof ApiError) throw error;
+        // A transport failure (DNS, refused connection, TLS, offline) is a real,
+        // nameable condition. Without this it escapes as a bare TypeError and
+        // every UI reports it as a generic "couldn't connect".
+        throw new ApiError(
+          0,
+          "sdk.transport",
+          error instanceof Error ? error.message : "network request failed",
+        );
       }
     }
   }
@@ -136,8 +153,47 @@ export class AuraApi {
     question: string,
     facts?: Record<string, number>,
     signal?: AbortSignal,
+    history?: Array<{ role: "user" | "assistant"; content: string }>,
+    requestId?: string,
   ): Promise<ReasonResult> {
-    return this.request<ReasonResult>("POST", "/v1/reason", { question, facts: facts ?? {} }, { signal });
+    const payload: {
+      question: string;
+      facts: Record<string, number>;
+      history?: Array<{ role: "user" | "assistant"; content: string }>;
+      request_id?: string;
+    } = { question, facts: facts ?? {} };
+    if (history?.length) payload.history = history;
+    if (requestId) payload.request_id = requestId;
+    return this.request<ReasonResult>("POST", "/v1/reason", payload, { signal });
+  }
+
+  /** Poll the status of one request (owner-scoped; powers the future Stop button). */
+  getTask(requestId: string, signal?: AbortSignal): Promise<TaskStatus> {
+    return this.request<TaskStatus>("GET", `/v1/tasks/${requestId}`, undefined, { signal });
+  }
+
+  /** Ask the server to cancel an in-flight request (owner-scoped). */
+  cancelTask(requestId: string, signal?: AbortSignal): Promise<TaskCancelled> {
+    return this.request<TaskCancelled>("POST", `/v1/tasks/${requestId}/cancel`, undefined, { signal });
+  }
+
+  /** Run one goal through the guarded agent runtime (owner-scoped). */
+  runAgent(
+    goal: string,
+    options: {
+      capabilities?: string[];
+      successCriteria?: string[];
+      worldState?: Record<string, unknown>;
+      requestId?: string;
+      signal?: AbortSignal;
+    } = {},
+  ): Promise<AgentRunResult> {
+    const payload: Record<string, unknown> = { goal };
+    if (options.successCriteria?.length) payload.success_criteria = options.successCriteria;
+    if (options.capabilities?.length) payload.capabilities = options.capabilities;
+    if (options.worldState) payload.world_state = options.worldState;
+    if (options.requestId) payload.request_id = options.requestId;
+    return this.request<AgentRunResult>("POST", "/v1/agents/run", payload, { signal: options.signal });
   }
 
   remember(key: string, content: Record<string, unknown>, kind = "episodic"): Promise<{ memory_id: string }> {
@@ -160,6 +216,12 @@ export class AuraApi {
     return this.request<ResearchOutput>("POST", "/v1/research", { question, claims });
   }
 
+  listResearchRuns(limit = 20, cursor?: number, signal?: AbortSignal): Promise<ResearchRunsPage> {
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (cursor !== undefined) query.set("cursor", String(cursor));
+    return this.request<ResearchRunsPage>("GET", `/v1/research/runs?${query.toString()}`, undefined, { signal });
+  }
+
   plan(goal: string, tasks: Array<{ name: string; capability?: string; risk?: number }>): Promise<PlanResult> {
     return this.request<PlanResult>("POST", "/v1/plan", { goal, tasks });
   }
@@ -170,6 +232,19 @@ export class AuraApi {
 
   audit(): Promise<{ entries: AuditRecord[] }> {
     return this.request<{ entries: AuditRecord[] }>("GET", "/v1/audit");
+  }
+
+  /**
+   * Explicitly request the security log (e.g., for support). The server
+   * records the request as its own audit event and serves the live log.
+   */
+  securityLogs(reason?: string): Promise<{ entries: SecurityLogEntry[] }> {
+    return this.request<{ entries: SecurityLogEntry[] }>("POST", "/v1/security/logs", { reason: reason ?? "" });
+  }
+
+  /** Provider discovery: what is registered, configured and actually available. */
+  providerState(signal?: AbortSignal): Promise<ProviderStateResponse> {
+    return this.request<ProviderStateResponse>("GET", "/v1/providers", undefined, { signal });
   }
 }
 

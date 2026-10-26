@@ -77,9 +77,12 @@ def _post(port: int, path: str, payload: dict, *, token: str | None = None) -> t
         return response.status, {}
 
 
-def _get(port: int, path: str) -> tuple[int, object]:
+def _get(port: int, path: str, *, token: str | None = None) -> tuple[int, object]:
     conn = HTTPConnection("127.0.0.1", port, timeout=10)
-    conn.request("GET", path)
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    conn.request("GET", path, headers=headers)
     response = conn.getresponse()
     raw = response.read()
     conn.close()
@@ -116,8 +119,10 @@ def test_auth_attack_fires_alert_and_delivers_webhook(webhook_sink: object) -> N
         assert status == 401
     assert api.aura.brain.metrics.count("api_auth_failure") == 51
 
-    # /health runs _evaluate_alerts against the live metrics snapshot.
-    status, body = _get(port, "/health")
+    # /health runs _evaluate_alerts against the live metrics snapshot. Health
+    # discloses engine internals, so it now verifies the credential: the alert
+    # evaluation must still happen for an authenticated caller.
+    status, body = _get(port, "/health", token=SERVICE_KEY)
     assert status == 200
     assert isinstance(body, dict)
     assert "alerts_fired" in body
@@ -249,7 +254,7 @@ def test_health_endpoint_preserves_alerts_fields_and_semantics() -> None:
         config=ServerConfig(host="127.0.0.1", port=0, api_key=SERVICE_KEY, admin_key=ADMIN_KEY),
     )
     port = _start(api)
-    status, body = _get(port, "/health")
+    status, body = _get(port, "/health", token=SERVICE_KEY)
     assert status == 200
     assert isinstance(body, dict)
     assert body["status"] == "ok"

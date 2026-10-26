@@ -28,11 +28,21 @@ from aura.memory.models import (
     RetentionPolicy,
     Sensitivity,
 )
-from aura.memory.retrieval import RetrievalScorer
+from aura.memory.retrieval import RetrievalScorer, meaningful_tokens
 from aura.memory.store import InMemoryMemoryStore, MemoryStore
 from aura.observability.metrics import Metrics
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _meaningful_tokens(text: str) -> list[str]:
+    # Phase 2C: single canonical tokenizer lives in aura.memory.retrieval;
+    # this wrapper keeps the engine's existing call sites stable.
+    return sorted(meaningful_tokens(text))
+
+
+def _flatten_content(entry: MemoryEntry) -> str:
+    return " ".join(str(v) for v in entry.content.values())
 
 
 @dataclass
@@ -40,6 +50,7 @@ class MemoryQuery:
     text: str = ""
     kind: MemoryType | None = None
     tags: tuple[str, ...] = ()
+    scope: str | None = None
     limit: int = 10
 
 
@@ -137,6 +148,7 @@ class MemoryEngine:
         confidence: MemoryConfidence | None = None,
         provenance: Provenance | None = None,
         tags: tuple[str, ...] = (),
+        scope: str | None = None,
         expires_at: datetime | None = None,
         sensitivity: Sensitivity = Sensitivity.INTERNAL,
         observed_at: datetime | None = None,
@@ -152,6 +164,7 @@ class MemoryEngine:
             clock=self._clock,
             expires_at=expires_at,
             tags=tags,
+            scope=scope,
             sensitivity=sensitivity,
             observed_at=observed_at,
             retention=retention,
@@ -197,9 +210,83 @@ class MemoryEngine:
     # -- read ---------------------------------------------------------------
     @_count_store_failure
     def recall(self, query: MemoryQuery) -> list[MemoryEntry]:
-        candidates = self.store.search(text=query.text, kind=query.kind, tags=query.tags)
+        if query.scope is not None and not query.scope.strip():
+            raise ValueError("memory scope must be a non-empty string when provided")
+        candidates = self.store.search(
+            text=query.text, kind=query.kind, tags=query.tags, scope=query.scope
+        )
+        if not candidates:
+            # Exact-substring miss: fall back to deterministic token overlap so a
+            # paraphrase ("what programming language do I prefer") can still find
+            # a memory ("Python is my preferred language") without weakening the
+            # scope/kind/tags filter or the bounded ranking that follows.
+            candidates = self._token_overlap_candidates(
+                query.text, kind=query.kind, tags=query.tags, scope=query.scope
+            )
+        return self._rank_and_touch(candidates, query)
+
+    def _token_overlap_candidates(
+        self,
+        text: str,
+        *,
+        kind: Any,
+        tags: tuple[str, ...],
+        scope: str | None,
+    ) -> list[MemoryEntry]:
+        tokens = set(_meaningful_tokens(text))
+        if not tokens:
+            return []
+        pool = self.store.search(text="", kind=kind, tags=tags, scope=scope)
+        out: list[MemoryEntry] = []
+        for entry in pool:
+            haystack = f"{entry.key} {_flatten_content(entry)}"
+            if tokens & set(_meaningful_tokens(haystack)):
+                out.append(entry)
+        return out
+
+    def _rank_and_touch(self, candidates: list[MemoryEntry], query: MemoryQuery) -> list[MemoryEntry]:
         ranked = sorted(
             candidates,
+            key=lambda e: self._scorer.score(e, query.text, now=self._clock.now()),
+            reverse=True,
+        )
+        for entry in ranked[: query.limit]:
+            entry.touch(self._clock)
+        return ranked[: query.limit]
+
+    @_count_store_failure
+    def recall_any(self, query: MemoryQuery, *, terms: tuple[str, ...] = ()) -> list[MemoryEntry]:
+        """Recall entries matching the query text **or** any of ``terms``.
+
+        :meth:`recall` is an exact-substring filter over the whole query, which
+        is the right primitive for an exact lookup but returns nothing for a
+        natural-language question ("when does the deployment window open?" is
+        not a substring of any record). This method unions the store's index
+        over the individual terms, then applies the same ranking and
+        ``last_access`` handling as :meth:`recall`.
+
+        It widens *retrieval* only: it never widens access. Callers still apply
+        scope, sensitivity policy and any context budget themselves.
+        """
+        probes = (query.text, *terms)
+        seen: dict[MemoryId, MemoryEntry] = {}
+        for probe in probes:
+            cleaned = probe.strip()
+            if not cleaned:
+                continue
+            for entry in self.store.search(
+                text=cleaned, kind=query.kind, tags=query.tags, scope=query.scope
+            ):
+                seen[entry.id] = entry
+        if not seen and query.text.strip():
+            # No exact/term hit: deterministic token-overlap fallback (same scope
+            # filters) so paraphrased queries still recall the relevant memory.
+            for entry in self._token_overlap_candidates(
+                query.text, kind=query.kind, tags=query.tags, scope=query.scope
+            ):
+                seen[entry.id] = entry
+        ranked = sorted(
+            seen.values(),
             key=lambda e: self._scorer.score(e, query.text, now=self._clock.now()),
             reverse=True,
         )

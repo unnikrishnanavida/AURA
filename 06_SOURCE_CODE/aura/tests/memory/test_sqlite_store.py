@@ -251,3 +251,35 @@ def test_frozen_clock_used_for_archive_timestamp(sqlite_path: str) -> None:
     ).fetchone()
     assert row is not None and "2024-01-01" in row[0]
     store.close()
+
+
+# -- MEM-1: scope column, isolation, and migration to schema v2 -----------------
+
+
+def test_sqlite_scope_isolation_and_persistence(sqlite_path: str) -> None:
+    store = SQLiteMemoryStore(path=sqlite_path)
+    store.add(make_entry(key="alpha", scope="project:alpha"))
+    store.add(make_entry(key="beta", scope="project:beta"))
+    store.add(make_entry(key="unscoped"))
+    assert [e.key for e in store.search(scope="project:alpha")] == ["alpha"]
+    assert [e.key for e in store.search(scope="project:beta")] == ["beta"]
+    assert {e.key for e in store.search()} == {"alpha", "beta", "unscoped"}
+    store.close()
+
+    # New store over the same file -> scope survives the restart boundary.
+    reopened = SQLiteMemoryStore(path=sqlite_path)
+    entry = reopened.get(reopened.search(scope="project:alpha")[0].id)
+    assert entry.scope == "project:alpha"
+    reopened.close()
+
+
+def test_migrations_reach_scope_column(tmp_path: Path) -> None:
+    import sqlite3
+
+    conn = sqlite3.connect(str(tmp_path / "mig.sqlite3"))
+    applied = migrate(conn)
+    assert applied == [1, 2]
+    assert current_version(conn) == CURRENT_SCHEMA_VERSION
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(memory_entries)")}
+    assert "scope" in cols
+    conn.close()

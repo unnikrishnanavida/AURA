@@ -21,6 +21,41 @@ class PlanValidation:
         return "plan valid" if self.valid else "; ".join(self.issues)
 
 
+def _find_cycle(tasks: list[Task]) -> str | None:
+    """Return the name of a task involved in a prerequisite cycle, or ``None``.
+
+    Iterative depth-first search with WHITE/GRAY/BLACK coloring: revisiting a
+    node while it is still GRAY on the current path means a cycle exists. The
+    name returned is the task where the cycle was first observed, matching the
+    wording used by :class:`aura.planning.decomposer.GoalDecomposer`.
+    """
+    by_name = {task.name: task for task in tasks}
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color: dict[str, int] = {name: WHITE for name in by_name}
+
+    def visit(name: str) -> str | None:
+        color[name] = GRAY
+        for prereq in by_name[name].prerequisites:
+            if prereq not in by_name:
+                # Unknown prerequisites are reported separately by validate.
+                continue
+            if color[prereq] is GRAY:
+                return name
+            if color[prereq] is WHITE:
+                circular = visit(prereq)
+                if circular is not None:
+                    return circular
+        color[name] = BLACK
+        return None
+
+    for name in by_name:
+        if color[name] is WHITE:
+            circular = visit(name)
+            if circular is not None:
+                return circular
+    return None
+
+
 class PlanValidator:
     def validate(
         self,
@@ -44,6 +79,10 @@ class PlanValidator:
             for prereq in task.prerequisites:
                 if prereq not in available:
                     issues.append(f"task {task.name!r} depends on unknown task {prereq!r}")
+
+        circular = _find_cycle(tasks)
+        if circular is not None:
+            issues.append(f"circular dependency between tasks near {circular!r}")
 
         total_cost = sum(t.estimated_cost for t in tasks)
         total_time = sum(t.estimated_seconds for t in tasks)

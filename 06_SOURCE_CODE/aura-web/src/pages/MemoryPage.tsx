@@ -1,5 +1,6 @@
 /**
- * Memory inspection: write and recall records through the AURA API.
+ * Memory: write and recall records through the AURA API.
+ * Explanation-first copy; every value still comes live from the API.
  */
 
 import { useState, type FormEvent } from "react";
@@ -24,7 +25,7 @@ export function MemoryPage() {
     try {
       const parsed = JSON.parse(content || "{}") as Record<string, unknown>;
       const { memory_id } = await api.remember(key, parsed);
-      setMessage(`remembered as ${memory_id}`);
+      setMessage(`Remembered (${memory_id}).`);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -51,9 +52,13 @@ export function MemoryPage() {
   return (
     <section aria-label="Memory" className="panel">
       <h2>Memory</h2>
+      <p className="hint memory-intro">
+        Long-term memory lets AURA persist useful facts between conversations. Save something under a key, or recall it
+        later with a memory query.
+      </p>
       <form onSubmit={onRemember} aria-label="Remember">
         <label>
-          Key
+          What should we call it?
           <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="deployment-state" required />
         </label>
         <label>
@@ -66,12 +71,12 @@ export function MemoryPage() {
           />
         </label>
         <button type="submit" disabled={busy || !key.trim()}>
-          Remember
+          Save to memory
         </button>
       </form>
       <form onSubmit={onRecall} aria-label="Recall" className="row">
         <label>
-          Query
+          Recall by meaning
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="deployment" />
         </label>
         <button type="submit" disabled={busy}>

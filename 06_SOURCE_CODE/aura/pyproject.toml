@@ -76,6 +76,10 @@ exclude = ["build/", "dist/", "tests/"]
 module = ["pydantic.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["aura_agent.*"]
+ignore_missing_imports = true
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100

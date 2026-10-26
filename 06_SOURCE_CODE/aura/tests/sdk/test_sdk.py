@@ -43,6 +43,31 @@ def test_sdk_plan() -> None:
     assert plan["steps"] == ["1:a", "2:b"]
 
 
+def test_sdk_plan_uses_brain_planner_and_records_events() -> None:
+    """SDK plans must be created by the brain's planner and flight-recorded.
+
+    Regression for SDK-1: the SDK previously instantiated a fresh PlanningEngine
+    per call, so plans were invisible to the flight recorder.
+    """
+    aura = make_aura()
+    plan = aura.plan(
+        goal=Goal.create(description="build"),
+        tasks=[Task(name="a"), Task(name="b", prerequisites=("a",))],
+    )
+    assert plan["plan_created"]
+    created = aura.brain.recorder.events(event_type="plan.created")
+    assert created, "a plan.created event must be recorded"
+    assert created[0].payload["plan_id"] == plan["plan_id"]
+
+    rejected = aura.plan(
+        goal=Goal.create(description="cyclic"),
+        tasks=[Task(name="x", prerequisites=("y",)), Task(name="y", prerequisites=("x",))],
+    )
+    assert rejected["plan_created"] is False
+    assert any("circular dependency" in issue for issue in rejected["issues"])
+    assert aura.brain.recorder.events(event_type="plan.rejected"), "a plan.rejected event must be recorded"
+
+
 def test_sdk_observe_and_health() -> None:
     aura = make_aura()
     claim_id = aura.observe(statement="all systems nominal", predicate=("systems", "status"))

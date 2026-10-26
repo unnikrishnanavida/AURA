@@ -23,7 +23,7 @@ logger = logging.getLogger("aura.memory")
 
 SCHEMA_TABLE = "schema_version"
 INITIAL_VERSION = 0
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 # Advisory-lock key for serializing concurrent migrations across instances.
 # Must remain stable across releases (a fixed 64-bit value in the migration
@@ -74,8 +74,16 @@ MIGRATION_1_STATEMENTS: tuple[str, ...] = (
     ),
 )
 
+# Migration 2: optional retrieval-isolation scope (MEM-1); NULL for existing rows.
+MIGRATION_2_STATEMENTS: tuple[str, ...] = (
+    "ALTER TABLE memory_entries ADD COLUMN scope TEXT",
+    "ALTER TABLE memory_archive ADD COLUMN scope TEXT",
+    "CREATE INDEX IF NOT EXISTS idx_memory_scope ON memory_entries(scope)",
+)
+
 MIGRATIONS: dict[int, tuple[str, ...]] = {
     1: MIGRATION_1_STATEMENTS,
+    2: MIGRATION_2_STATEMENTS,
 }
 
 

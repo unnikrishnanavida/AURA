@@ -81,6 +81,104 @@ class Conclusion:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class GroundingItem:
+    """One retrieved, attributable piece of context for a single question.
+
+    A grounding item is *evidence*, not assertion: it carries the record it came
+    from, how relevant it scored, how confident the source is, and whether the
+    knowledge base currently contradicts it. Nothing here is ever invented --
+    every field is derived from a stored memory entry or knowledge claim.
+    """
+
+    source: str  # "memory" | "knowledge"
+    reference: str  # memory id or claim id
+    text: str
+    score: float  # relevance in [0,1]
+    confidence: float  # source confidence in [0,1]
+    verified: bool = False
+    contradicted: bool = False
+    scope: str | None = None
+    provenance: dict[str, Any] = field(default_factory=dict)
+
+    def belief(self) -> float:
+        """Deterministic belief this item contributes to the fact base.
+
+        Confidence and relevance are multiplied (neither alone justifies a
+        fact), and contradicted evidence is discounted rather than dropped so
+        the conflict remains visible to verification.
+        """
+        base = self.confidence * self.score
+        if self.contradicted:
+            base *= 0.4
+        return round(min(1.0, max(0.0, base)), 6)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "source": self.source,
+            "reference": self.reference,
+            "text": self.text,
+            "score": round(self.score, 6),
+            "confidence": round(self.confidence, 6),
+            "belief": self.belief(),
+            "verified": self.verified,
+            "contradicted": self.contradicted,
+            "scope": self.scope,
+            "provenance": dict(self.provenance),
+        }
+
+
+#: Matches :meth:`ReasoningInput.observed`: a proposition counts as observed at
+#: or above this belief. Retrieved context below it is still returned for
+#: attribution and may still ground an extractive answer, but it is never
+#: promoted into a logical premise -- a sentence someone once stored is not a
+#: premise the reasoner may derive from.
+OBSERVED_BELIEF = 0.5
+
+
+@dataclass(frozen=True, slots=True)
+class Grounding:
+    """The explicit context contract handed to one reasoning pass.
+
+    ``items`` is relevance-ranked and budget-bounded by the assembler;
+    ``dropped``/``truncated`` record what the budget removed so a caller can
+    always tell the difference between "nothing was relevant" and "the context
+    budget cut the relevant items off".
+    """
+
+    items: tuple[GroundingItem, ...] = ()
+    contradictions: tuple[tuple[str, str], ...] = ()
+    dropped: int = 0
+    truncated: bool = False
+    filtered: int = 0
+    turns: int = 0
+
+    def facts(self) -> dict[str, float]:
+        """Facts contributed by the context; caller-supplied facts take priority.
+
+        Only items at or above :data:`OBSERVED_BELIEF` qualify, so weakly
+        supported context cannot distort the deterministic strategies.
+        """
+        return {
+            item.text: item.belief()
+            for item in self.items
+            if item.text and item.belief() >= OBSERVED_BELIEF
+        }
+
+    def evidence_lines(self) -> tuple[str, ...]:
+        return tuple(f"[{item.source}] {item.text}" for item in self.items)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "items": [item.to_dict() for item in self.items],
+            "contradictions": [list(pair) for pair in self.contradictions],
+            "dropped": self.dropped,
+            "truncated": self.truncated,
+            "filtered": self.filtered,
+            "turns": self.turns,
+        }
+
+
 @dataclass
 class ReasoningInput:
     """Everything a strategy may need to answer one question."""
@@ -95,6 +193,7 @@ class ReasoningInput:
     assumptions: tuple[Assumption, ...] = ()
     min_evidence: int = 1
     counterfactual_variable: str = ""
+    grounding: Grounding = field(default_factory=Grounding)
 
     def observed(self, proposition: str) -> bool:
         return self.facts.get(proposition, 0.0) >= 0.5
@@ -125,9 +224,12 @@ def make_conclusion(
 
 
 __all__ = [
+    "OBSERVED_BELIEF",
     "Assumption",
     "Case",
     "Conclusion",
+    "Grounding",
+    "GroundingItem",
     "InferenceStep",
     "ReasoningInput",
     "ReasoningTrace",

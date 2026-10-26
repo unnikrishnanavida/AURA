@@ -53,7 +53,16 @@ class _Cmd:
     def ready(self) -> int:
         health = self.aura.health()
         ready = health["status"] == "ok"
-        print(json.dumps({"status": "ready" if ready else "not_ready"}, sort_keys=True))
+        store = getattr(getattr(getattr(self.aura, "brain", None), "memory", None), "store", None)
+        count: object = "unknown"
+        probe = getattr(store, "count", None)
+        if callable(probe):
+            try:
+                count = probe()
+            except Exception as exc:  # noqa: BLE001 - a dead backend means not ready
+                ready = False
+                count = f"unavailable: {exc}"
+        print(json.dumps({"status": "ready" if ready else "not_ready", "store_entries": count}, sort_keys=True))
         return 0 if ready else 1
 
     def config_validate(self) -> int:
@@ -83,9 +92,15 @@ class _Cmd:
             return 1
 
     def security_status(self) -> int:
-        print("AURA security posture (local engineered defaults)")
-        print("  capability-based execution: enabled (default-deny)")
-        print("  learning requires the learning gate: enabled")
+        health = self.aura.health()
+        learning_health = self.aura.brain.learning.health()
+        profile = self.aura.provider_profile
+        print("AURA security posture (real runtime state)")
+        print(f"  engine health: {health.get('status')} ({health.get('recorded_events', 0)} recorded events)")
+        print(f"  learning registry: {learning_health.get('active_changes', 0)} active applied change(s)")
+        print(f"  provider: {profile.name} (local={profile.local}, privacy_approved={profile.privacy_approved})")
+        if not profile.local:
+            print("  note: configured provider is remote; live connectivity is NOT verified by this command")
         return 0
 
     def audit(self, limit: int) -> int:

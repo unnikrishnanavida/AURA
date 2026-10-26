@@ -39,6 +39,21 @@ def _post(port: int, path: str, payload: dict, *, token: str | None = None) -> t
         return response.status, {}
 
 
+def _get(port: int, path: str, *, token: str | None = None) -> tuple[int, object]:
+    conn = HTTPConnection("127.0.0.1", port, timeout=10)
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    conn.request("GET", path, headers=headers)
+    response = conn.getresponse()
+    raw = response.read()
+    conn.close()
+    try:
+        return response.status, json.loads(raw.decode("utf-8"))
+    except json.JSONDecodeError:
+        return response.status, {}
+
+
 # -- unit: issuer ---------------------------------------------------------------
 def test_api_key_issuer_issue_and_validate() -> None:
     issuer = ApiKeyIssuer(secret="a-secret-that-is-16-plus-chars")
@@ -174,3 +189,118 @@ def test_server_admin_issue_requires_admin() -> None:
     _api, port = _secure_server()
     status, _ = _post(port, "/v1/keys", {"ttl_seconds": 60}, token=SERVICE_KEY)
     assert status == 403
+
+
+# -- authorization: authentication is not authorization ----------------------
+
+
+def _issue_scoped_key(port: int, *scopes: str) -> str:
+    status, body = _post(port, "/v1/keys", {"scopes": list(scopes)}, token=ADMIN_KEY)
+    assert status == 201
+    return str(body["api_key"])
+
+
+def test_scoped_key_is_allowed_its_own_scope() -> None:
+    _api, port = _secure_server()
+    key = _issue_scoped_key(port, "memory.read")
+    status, body = _post(port, "/v1/recall", {"text": "anything"}, token=key)
+    assert status == 200
+    assert "entries" in body
+
+
+def test_scoped_key_is_denied_outside_its_scope() -> None:
+    _api, port = _secure_server()
+    key = _issue_scoped_key(port, "memory.read")
+    status, body = _post(port, "/v1/remember", {"key": "k", "content": {"text": "v"}}, token=key)
+    assert status == 403
+    assert body["error"]["code"] == "api.forbidden"
+
+
+def test_authentication_and_authorization_failures_are_distinguishable() -> None:
+    _api, port = _secure_server()
+    key = _issue_scoped_key(port, "memory.read")
+
+    # No valid credential at all -> who are you? (401)
+    status_missing, body_missing = _post(port, "/v1/reason", {"question": "x"})
+    assert status_missing == 401
+    assert body_missing["error"]["code"] == "api.auth_failed"
+
+    status_wrong, _ = _post(port, "/v1/reason", {"question": "x"}, token="nope-nope-nope")
+    assert status_wrong == 401
+
+    # Valid identity, insufficient authority -> what may you do? (403)
+    status_forbidden, body_forbidden = _post(port, "/v1/reason", {"question": "x"}, token=key)
+    assert status_forbidden == 403
+    assert body_forbidden["error"]["code"] == "api.forbidden"
+
+
+def test_prefix_wildcard_scope_grants_only_its_family() -> None:
+    _api, port = _secure_server()
+    key = _issue_scoped_key(port, "memory.*")
+    assert _post(port, "/v1/recall", {"text": "x"}, token=key)[0] == 200
+    assert _post(port, "/v1/remember", {"key": "k", "content": {"text": "v"}}, token=key)[0] == 200
+    denied, _ = _post(port, "/v1/retrieve", {"statement": "x"}, token=key)
+    assert denied == 403
+
+
+def test_key_with_no_scopes_is_denied_everything() -> None:
+    _api, port = _secure_server()
+    key = _issue_scoped_key(port, "memory.read")
+    # A grant list that does not cover cognition must not reach /v1/reason.
+    denied, body = _post(port, "/v1/reason", {"question": "x"}, token=key)
+    assert denied == 403
+    assert body["error"]["code"] == "api.forbidden"
+
+
+def test_authorization_denial_is_audited_and_counted() -> None:
+    api, port = _secure_server()
+    key = _issue_scoped_key(port, "memory.read")
+
+    assert _post(port, "/v1/research", {"question": "q"}, token=key)[0] == 403
+
+    assert any(r.action == "api.authz.denied" for r in api.audit.entries())
+    denial = next(r for r in api.audit.entries() if r.action == "api.authz.denied")
+    assert denial.payload["required_scope"] == "research.run"
+    assert denial.payload["granted_scopes"] == ["memory.read"]
+    assert denial.decision == "deny"
+    assert api.aura.brain.metrics.count("api_authz_failure") >= 1
+
+
+def test_readiness_verifies_credentials_when_a_boundary_exists() -> None:
+    _api, port = _secure_server()
+
+    status_ready, _ = _get(port, "/ready", token=SERVICE_KEY)
+    assert status_ready == 200
+
+    unauthenticated, _ = _get(port, "/ready")
+    assert unauthenticated == 401
+
+    unauthenticated_health, _ = _get(port, "/health")
+    assert unauthenticated_health == 401
+
+    # Liveness stays open so orchestrators can always probe the process.
+    liveness, _ = _get(port, "/liveness")
+    assert liveness == 200
+
+
+def test_key_issuance_rejects_unknown_scopes() -> None:
+    _api, port = _secure_server()
+    status, body = _post(port, "/v1/keys", {"scopes": ["memroy.read"]}, token=ADMIN_KEY)
+    assert status == 400
+    assert body["error"]["code"] == "api.validation"
+    assert "memroy.read" in body["error"]["message"]
+
+
+def test_admin_key_may_issue_keys_and_reach_data_routes() -> None:
+    _api, port = _secure_server()
+    status, _ = _post(port, "/v1/reason", {"question": "x"}, token=ADMIN_KEY)
+    assert status == 200
+
+
+def test_local_first_mode_needs_no_credential() -> None:
+    """With no boundary configured there are no identities to enforce."""
+    api = AuraApiServer(config=ServerConfig(host="127.0.0.1", port=0))
+    port = _start(api)
+    status, body = _post(port, "/v1/reason", {"question": "x"})
+    assert status == 200
+    assert "answer" in body

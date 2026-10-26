@@ -23,7 +23,7 @@ from aura.foundation.errors import ConfigurationError
 
 SCHEMA_TABLE = "schema_version"
 INITIAL_VERSION = 0
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 
 _COLUMNS_SQL = """
     id TEXT PRIMARY KEY,
@@ -70,8 +70,18 @@ MIGRATION_1_STATEMENTS: tuple[str, ...] = (
     ),
 )
 
+# Migration 2: add the optional retrieval-isolation scope (MEM-1). `scope` is
+# an optional TEXT column; existing rows are unscoped (NULL) which keeps them
+# readable and backward compatible.
+MIGRATION_2_STATEMENTS: tuple[str, ...] = (
+    "ALTER TABLE memory_entries ADD COLUMN scope TEXT",
+    "ALTER TABLE memory_archive ADD COLUMN scope TEXT",
+    "CREATE INDEX IF NOT EXISTS idx_memory_scope ON memory_entries(scope)",
+)
+
 MIGRATIONS: dict[int, tuple[str, ...]] = {
     1: MIGRATION_1_STATEMENTS,
+    2: MIGRATION_2_STATEMENTS,
 }
 
 

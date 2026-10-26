@@ -1,5 +1,6 @@
 /**
  * Knowledge: add claims and retrieve claims through the AURA API.
+ * Explanation-first copy; every value still comes live from the API.
  */
 
 import { useState, type FormEvent } from "react";
@@ -22,7 +23,7 @@ export function KnowledgePage() {
     setError(null);
     try {
       const { claim_id } = await api.observe(statement);
-      setMessage(`claim registered as ${claim_id}`);
+      setMessage(`Saved as a knowledge claim (${claim_id}).`);
       setStatement("");
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -49,22 +50,26 @@ export function KnowledgePage() {
   return (
     <section aria-label="Knowledge" className="panel">
       <h2>Knowledge</h2>
+      <p className="hint knowledge-intro">
+        Knowledge is a store of factual claims about your world. Teach AURA a statement, or retrieve what it already
+        knows.
+      </p>
       <form onSubmit={onObserve} aria-label="Observe">
         <label>
-          Claim statement
+          What do you want AURA to know?
           <input value={statement} onChange={(e) => setStatement(e.target.value)} placeholder="deployment requires approval" required />
         </label>
         <button type="submit" disabled={busy || !statement.trim()}>
-          Observe claim
+          Save claim
         </button>
       </form>
       <form onSubmit={onRetrieve} aria-label="Retrieve" className="row">
         <label>
-          Query
+          Ask AURA what it knows
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="deployment" />
         </label>
         <button type="submit" disabled={busy}>
-          Retrieve
+          Recall
         </button>
       </form>
       {message ? <p className="ok">{message}</p> : null}

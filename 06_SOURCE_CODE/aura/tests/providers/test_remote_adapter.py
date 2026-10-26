@@ -67,6 +67,50 @@ def test_provider_context_is_forwarded_as_evidence() -> None:
     assert "conclusions" in user_message
 
 
+def test_conversation_mode_uses_assistant_prompt_and_prior_turns() -> None:
+    transport = FakeTransport()
+    adapter = _adapter()
+    adapter._transport = transport
+    adapter.reason(
+        "What is machine learning?",
+        mode="conversation",
+        history=[{"role": "user", "content": "Explain AI."}],
+    )
+
+    import json
+
+    payload = json.loads(transport.requests[0][3].decode())  # type: ignore[union-attr]
+    messages = payload["messages"]
+    assert messages[0]["role"] == "system"
+    assert "AURA" in messages[0]["content"]
+    assert "provided evidence only" not in messages[0]["content"]
+    assert messages[1:] == [
+        {"role": "user", "content": "Explain AI."},
+        {"role": "user", "content": "What is machine learning?"},
+    ]
+
+
+def test_prebuilt_messages_are_sent_verbatim() -> None:
+    """The Step 1A handoff must reach the model unmodified.
+
+    If the adapter rebuilt the prompt itself it would drop the authorized
+    context and send something the user never approved.
+    """
+    transport = FakeTransport()
+    adapter = _adapter()
+    adapter._transport = transport
+    messages = [
+        {"role": "system", "content": "SYSTEM POLICY"},
+        {"role": "user", "content": "=== AUTHORIZED CONTEXT ===\nsecret-but-authorized"},
+    ]
+    assert adapter.reason("q", messages=messages) == "hello"
+    import json
+
+    payload = json.loads(transport.requests[0][3].decode())  # type: ignore[union-attr]
+    assert payload["messages"] == messages
+    assert "secret-but-authorized" in payload["messages"][1]["content"]
+
+
 def test_http_error_maps_to_unavailable() -> None:
     adapter = _adapter()
     adapter._transport = FakeTransport(status=500, body="oops")

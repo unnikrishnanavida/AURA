@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from aura.providers.result import ProviderResult, ProviderStatus
 from aura.reasoning.engine import ReasoningEngine, ReasoningInput
 from aura.reasoning.models import Case, Rule
 from aura.reasoning.uncertainty import UncertaintyLevel, uncertainty_from_confidence
@@ -15,6 +16,53 @@ def test_unknown_answer_when_no_evidence() -> None:
     result = make_engine().reason(
         ReasoningInput(question="is the moon made of cheese?", facts={})
     )
+    assert result.answer == "I do not know"
+    assert result.confidence == 0.0
+    assert result.uncertainty is UncertaintyLevel.HIGH
+
+
+def test_generation_provider_answers_unresolved_general_question() -> None:
+    class GenerationManager:
+        last_provider = "test-model"
+
+        def __init__(self) -> None:
+            self.request: dict[str, object] = {}
+
+        def generate(self, **kwargs: object) -> ProviderResult:
+            self.request = kwargs
+            return ProviderResult(
+                status=ProviderStatus.OK,
+                text="Machine learning is a way for software to learn patterns from data.",
+                provider="test-model",
+                model="test-model-v1",
+                local=False,
+            )
+
+    manager = GenerationManager()
+    engine = ReasoningEngine(provider_manager=manager)
+    result = engine.reason(ReasoningInput(question="What is machine learning?", facts={}))
+
+    assert result.answer.startswith("Machine learning is")
+    assert result.confidence is None
+    assert result.uncertainty is None
+    assert result.provider_mode == "generation"
+    assert result.provider_status == "ok"
+    assert result.provider_model == "test-model-v1"
+    # A generated answer is explicitly NOT verified.
+    assert result.provider_verified is False
+    assert manager.request["question"] == "What is machine learning?"
+    # The provider receives the Step 1A context as a structured handoff.
+    messages = manager.request["messages"]
+    assert isinstance(messages, list) and messages
+    assert messages[0]["role"] == "system"
+    assert "USER REQUEST" in messages[-1]["content"]
+
+
+def test_unresolved_general_question_does_not_report_strategy_confidence() -> None:
+    result = make_engine().reason(
+        ReasoningInput(question="What is machine learning?", facts={})
+    )
+
     assert result.answer == "I do not know"
     assert result.confidence == 0.0
     assert result.uncertainty is UncertaintyLevel.HIGH
@@ -101,3 +149,43 @@ def test_analogical_case_used() -> None:
         )
     )
     assert result.answer is not None
+
+
+# -- REAS-1: evidence-aware strategy selection ---------------------------------
+
+
+def test_selection_core_strategies_without_context() -> None:
+    engine = make_engine()
+    selected = engine.select_strategies(ReasoningInput(question="q", facts={}))
+    assert selected == ("deductive", "abductive", "causal", "probabilistic")
+
+
+def test_selection_variety_with_context() -> None:
+    engine = make_engine()
+    inp = ReasoningInput(
+        question="q",
+        facts={},
+        hypotheses=("h1",),
+        cases=(Case(attrs=frozenset({"a"}), outcome="o"),),
+    )
+    assert engine.select_strategies(inp) == (
+        "deductive",
+        "abductive",
+        "causal",
+        "probabilistic",
+        "counterfactual",
+        "analogical",
+    )
+
+
+def test_selection_observable_on_result() -> None:
+    result = make_engine().reason(
+        ReasoningInput(
+            question="q",
+            facts={},
+            hypotheses=("h1",),
+        )
+    )
+    assert "counterfactual" in result.strategies_selected
+    assert "analogical" not in result.strategies_selected
+    assert "strategies" in result.to_dict()
